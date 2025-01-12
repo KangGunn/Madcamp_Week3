@@ -8,6 +8,8 @@ export interface EllipseNode {
     borderThickness: number;
     borderColor: string;
     backgroundColor: string;
+    x: number;
+    y: number;
 }
 
 // 부모(Home.tsx)에서 전달받을 Prop 타입 정의
@@ -18,11 +20,12 @@ interface EllipseProps {
     onRemove: (id: number) => void; // 노드를 삭제하는 콜백
     onChange: (id: number, updatedNode: Partial<EllipseNode>) => void; // 노드 정보 수정 콜백
     onDeselectAll: () => void; //모든 선택 해제 콜백
+    onDoubleClickNode: (id: number) => void; // 더블 클릭 시 자식 노드 생성 콜백
 }
 
 let globalContextMenuVisibleId: number | null = null; // 전역 상태로 메뉴 표시 ID 관리
 
-function Ellipse({ node, isSelected, onSelect, onRemove, onChange }: EllipseProps) {
+function Ellipse({ node, isSelected, onSelect, onRemove, onChange, onDoubleClickNode }: EllipseProps) {
     const {
         id,
         text,
@@ -55,8 +58,8 @@ function Ellipse({ node, isSelected, onSelect, onRemove, onChange }: EllipseProp
         globalContextMenuVisibleId = id; // 현재 메뉴 ID 설정
 
         const rect = e.currentTarget.getBoundingClientRect();
-        const offsetX = 10;
-        const offsetY = 10;
+        const offsetX = 0;
+        const offsetY = 0;
         setContextMenuPosition({ x: e.clientX - rect.left + offsetX, y: e.clientY - rect.top + offsetY });
         setContextMenuVisible(true);
     };
@@ -107,14 +110,19 @@ function Ellipse({ node, isSelected, onSelect, onRemove, onChange }: EllipseProp
                 cursor: 'pointer',
             }}
             onClick={(e) => {
-                e.stopPropagation(); // 수정: 이벤트 전파 방지
+                e.stopPropagation(); // 이벤트 전파 방지
                 onSelect(id);
                 setIsEditing(true);
             }}
             onContextMenu={(e) => {
-                e.stopPropagation(); // 수정: 이벤트 전파 방지
+                e.stopPropagation(); // 이벤트 전파 방지
                 handleContextMenu(e);
             }}
+            onDoubleClick={(e) => {
+                e.stopPropagation();
+                onDoubleClickNode(id);
+            }}
+
         >
             {isEditing ? (
                 <input
