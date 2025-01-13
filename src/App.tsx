@@ -1,29 +1,69 @@
-import React from 'react';
-import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom';
+import React, { useRef, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
 import Connections from './pages/Connections';
 import Ideawall from './pages/Ideawall';
+import Login from './pages/Login';
+import { AuthProvider } from './context/AuthContext'; // AuthContext 사용
 
 function App() {
+  const [sessions, setSessions] = useState<{ id: number; title: string }[]>([
+    { id: 1, title: 'Session #1' },
+  ]);
+  const homeRef = useRef<any>(null);
+
+  const handleNewSession = () => {
+    if (homeRef.current && typeof homeRef.current.handleNewSession === 'function') {
+      homeRef.current.handleNewSession();
+    }
+
+    const newId = sessions.length + 1;
+    setSessions((prev) => [...prev, { id: newId, title: `Session #${newId}` }]);
+  };
+
+  const handleSelectSession = (sessionId: number) => {
+    if (homeRef.current && typeof homeRef.current.handleLoadSession === 'function') {
+      homeRef.current.handleLoadSession(sessionId);
+    }
+  };
+
   return (
-    <BrowserRouter>
-      <div className='flex flex-row h-screen'>
-        <Sidebar />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* 기본 경로에서 /login으로 리다이렉트 */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
 
-        <div className='flex-1 bg-gray-100 p-4 overflow-auto'>
-          <Routes>
-            <Route path="/home" element={<Home />} />
-            <Route path="/connections" element={<Connections />} />
-            <Route path="/ideawall" element={<Ideawall />} />
+          {/* 로그인 화면 */}
+          <Route path="/login" element={<Login />} />
 
-            <Route path="/" element={<Navigate to="/home" replace />} />
+          {/* 사이드바 포함된 레이아웃 */}
+          <Route
+            path="/*"
+            element={
+              <div className="flex flex-row h-screen">
+                <Sidebar 
+                  sessions={sessions}
+                  onNewSession={handleNewSession}
+                  onSelectSession={handleSelectSession} />
+                <div className="flex-1 bg-gray-100 p-4 overflow-auto">
+                  <Routes>
+                    <Route path="home" element={<Home />} />
+                    <Route path="connections" element={<Connections />} />
+                    <Route path="ideawall" element={<Ideawall />} />
+                    {/* <Route path="/" element={<Navigate to="home" replace />} /> */}
+                  </Routes>
+                </div>
+              </div>
+            }
+          />
 
-            <Route path="/" element={<div>Page Not Found</div>} />
-          </Routes>
-        </div>
-      </div>
-    </BrowserRouter>
+          {/* 404 페이지 */}
+          <Route path="*" element={<div>Page Not Found</div>} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

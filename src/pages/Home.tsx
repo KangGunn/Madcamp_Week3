@@ -6,10 +6,13 @@ import ReactFlow, {
   useEdgesState,
   NodeDragStopParams,
   NodeDragEvent,
+  applyNodeChanges,
 } from 'reactflow';
 import 'reactflow/dist/style.css'; // React Flow 기본 스타일
 import EllipseNode from '../components/EllipseNode'; // 우리가 만든 Custom Node
 import { v4 as uuidv4 } from 'uuid'; // 고유 ID 생성용
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from 'react-router-dom';
 
 /**
  * 각 노드의 data 구조 예시:
@@ -155,6 +158,61 @@ function resolveSiblingCollisions(nodes: Node[], parentId: string | null): Node[
   return newNodes;
 }
 
+// --------------------- Node[] -> 세션 JSON 변환 ---------------------
+function nodesToSessionJSON({
+  sessionId,
+  userId,
+  visibility,
+  nodes,
+}: {
+  sessionId: number,
+  userId: number,
+  visibility: string,
+  nodes: Node[]
+}) {
+  // 노드 정보를 session JSON format에 맞게 변환
+  const nodeData = nodes.map((n) => ({
+    // node_id는 숫자로 변환 가능하면 숫자로, 안 되면 string 그대로
+    node_id: parseInt(n.id, 10) || n.id,
+    parent_id: n.data.parentId ? parseInt(n.data.parentId, 10) || n.data.parentId : null,
+    depth: n.data.depth || 0,
+    text: n.data.text || '',
+    // (x, y) 위치도 저장
+    position_x: n.position.x,
+    position_y: n.position.y,
+  }));
+
+  return {
+    session_id: sessionId,
+    user_id: userId,
+    visibility: visibility,
+    nodes: nodeData,
+  };
+}
+
+// JSON -> Node[] 변환 함수
+function sessionJSONToNodes(sessionJson: any): Node[] {
+  return sessionJson.nodes.map((item: any) => ({
+    id: String(item.node_id),
+    type: 'ellipse',
+    // 서버에서 받은 position_x, position_y 사용
+    position: { x: item.position_x, y: item.position_y },
+    data: {
+      text: item.text || '',
+      width: 200,
+      height: 100,
+      borderThickness: 2,
+      borderColor: 'black',
+      backgroundColor: 'white',
+      onRemove: () => {},
+      onChange: () => {},
+      setSelectedNode: () => {},
+      parentId: item.parent_id ? String(item.parent_id) : null,
+      depth: item.depth || 0,
+    },
+  }));
+}
+
 // --------------------- Home 컴포넌트 ---------------------
 function Home() {
   // --------------------- 상태 관련 ---------------------
@@ -163,6 +221,11 @@ function Home() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [direction, setDirection] = useState('');
   const [ideas, setIdeas] = useState('');
+  const [brainstormParentId, setBrainstormParentId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState(1); // **세션 ID 상태 추가**
+  const [visibility, setVisibility] = useState('private'); // **공개 범위 상태 추가**
+  const { user } = useAuth();
+  const navigate = useNavigate(); // 리다이렉트 기능 추가
 
   const OFFSET = 50;
   const VERTICAL_GAP = 20;
@@ -215,6 +278,16 @@ function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undoAction]);
 
+  const handleNodesChange = useCallback(
+    (changes) => {
+      setNodes((nds) => {
+        const updatedNodes = applyNodeChanges(changes, nds);
+        return updatedNodes;
+      });
+    },
+    [setNodes]
+  );
+
   // --------------------- 초기 루트 노드 생성 ---------------------
   useEffect(() => {
     if (nodes.length === 0) {
@@ -245,22 +318,19 @@ function Home() {
   }, []);
 
   // --------------------- 노드 생성 ---------------------
-  const handleAddNode = useCallback(() => {
-    if (!selectedNodeId) {
-      alert('부모 노드를 선택하세요.');
-      return;
-    }
-    const parentNode = nodes.find((n) => n.id === selectedNodeId);
+  const handleAddChildNode = useCallback((parentId: string, text: string) => {
+    const parentNode = nodes.find((n) => n.id === parentId);
     if (!parentNode) return;
 
     const newNodeWidth = 200;
     const newNodeHeight = 100;
-    // 자식 노드 x = 부모 오른쪽 + OFFSET
+    
+    // 자식 노드 x = 부모의 오른쪽 + OFFSET
     const parentRightEdge = parentNode.position.x + parentNode.data.width / 2;
     const defaultX = parentRightEdge + OFFSET + newNodeWidth / 2;
 
     // 기존 자식들(형제들)을 약간 위로 올림
-    const siblings = nodes.filter((n) => n.data.parentId === selectedNodeId);
+    const siblings = nodes.filter((n) => n.data.parentId === parentId);
     const shiftUp = 10; // 이전 자식들을 조금씩 위로
     const updatedSiblings = nodes.map((sib) => {
       if (siblings.find((x) => x.id === sib.id)) {
@@ -277,7 +347,6 @@ function Home() {
     setNodes(updatedSiblings);
 
     // 새 자식 노드: 맨 아래
-    // (기존 자식들 y를 약간 올렸으므로, 부모의 y + siblings.length*(height+gap) 정도로 계산)
     const defaultY = parentNode.position.y + siblings.length * (newNodeHeight + VERTICAL_GAP);
 
     const childId = uuidv4();
@@ -286,7 +355,7 @@ function Home() {
       type: 'ellipse',
       position: { x: defaultX, y: defaultY },
       data: {
-        text: '',
+        text,
         width: newNodeWidth,
         height: newNodeHeight,
         borderThickness: 2,
@@ -295,7 +364,7 @@ function Home() {
         onRemove: handleRemoveNode,
         onChange: handleChangeNode,
         setSelectedNode: (nodeId: string) => setSelectedNodeId(nodeId),
-        parentId: selectedNodeId,
+        parentId: parentId,
         depth: (parentNode.data.depth || 0) + 1,
       },
     };
@@ -313,15 +382,47 @@ function Home() {
 
     setNodes((prev) => [...prev, childNode]);
     setEdges((prev) => [...prev, newEdge]);
-  }, [nodes, selectedNodeId, setNodes, setEdges]);
+  }, [nodes, setNodes, setEdges]);
+
+  // --------------------- (기존) 자식 노드 생성(빈 텍스트) ---------------------
+  const handleAddNode = useCallback(() => {
+    if (!selectedNodeId) {
+      alert('부모 노드를 선택하세요.');
+      return;
+    }
+    // 간단히, 위에서 만든 handleAddChildNode 재사용
+    handleAddChildNode(selectedNodeId, '');
+  }, [handleAddChildNode, selectedNodeId]);
 
   // --------------------- 노드 삭제 ---------------------
-  const handleRemoveNode = (id: string) => {
-    setNodes((prev) => prev.filter((node) => node.id !== id));
-    if (selectedNodeId === id) {
-      setSelectedNodeId(null);
-    }
-  };
+  const handleRemoveNode = useCallback((id: string) => {
+    setNodes((prevNodes) => {
+      // 이전 상태(prevNodes)에서 내가 삭제하려는 노드 + 그 하위 노드들의 ID를 전부 찾음
+      const descendantIds = [id, ...getDescendants(id, prevNodes)];
+  
+      // 노드 상태 업데이트: descendantIds에 포함되지 않은 노드만 남김
+      const updatedNodes = prevNodes.filter(
+        (node) => !descendantIds.includes(node.id)
+      );
+  
+      // Edge 상태도 업데이트(화살표 연결)
+      // 삭제 대상 노드를 소스나 타겟으로 갖는 Edge는 모두 제거
+      setEdges((prevEdges) =>
+        prevEdges.filter(
+          (edge) =>
+            !descendantIds.includes(edge.source) &&
+            !descendantIds.includes(edge.target)
+        )
+      );
+  
+      // 혹시 선택된 노드가 삭제될 경우 선택 해제
+      if (selectedNodeId && descendantIds.includes(selectedNodeId)) {
+        setSelectedNodeId(null);
+      }
+  
+      return updatedNodes;
+    });
+  }, [setNodes, setEdges, selectedNodeId]);
 
   // --------------------- 노드 텍스트/데이터 변경 ---------------------
   const handleChangeNode = (id: string, updatedData: Partial<Node['data']>) => {
@@ -397,6 +498,8 @@ function Home() {
     const selectedNode = nodes.find((n) => n.id === selectedNodeId);
     if (!selectedNode) return;
     try {
+      setBrainstormParentId(selectedNodeId);
+
       const response = await fetch('http://13.209.75.24:3000/brainstorm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -421,16 +524,109 @@ function Home() {
     setSelectedNodeId(null);
   }, []);
 
+  const handleIdeaClick = useCallback((ideaText: string) => {
+    if (!brainstormParentId) return;
+    handleAddChildNode(brainstormParentId, ideaText);
+  }, [brainstormParentId, handleAddChildNode]);
+
+  // ----------- 세션 저장 -----------
+  // 서버에 JSON 형태로 POST -> session_id는 서버에서 생성한다고 가정
+  const handleSaveSession = async () => {
+
+    if (!user) {
+      alert('로그인이 필요합니다.');
+      navigate('/login');
+      return;
+    }
+
+    const userId = user!.id;        // 임의
+
+    // Node[] -> JSON 변환
+    const sessionJson = nodesToSessionJSON({
+      sessionId,
+      userId,
+      visibility,
+      nodes,
+    });
+
+    try {
+      const response = await fetch('http://13.209.75.24:3000/brainstorm/save_session_with_nodes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sessionJson),
+      });
+      if (!response.ok) {
+        throw new Error('세션 저장 실패');
+      }
+      const data = await response.json();
+      const newSessionId = data.session_id; // 서버가 생성한 세션 id
+      alert(`세션 #${newSessionId} 저장 완료!`);
+    } catch (err: any) {
+      console.error(err);
+      alert(`세션 저장 오류: ${err.message}`);
+    }
+  };
+
+  const handleLoadSession = async (loadSessionId: number) => {
+    try {
+      const response = await fetch(`http://13.209.75.24:3000/brainstorm/load_session/${loadSessionId}`, {
+        method: 'GET',
+      });
+      if (!response.ok) {
+        throw new Error('세션 불러오기 실패');
+      }
+      const data = await response.json();
+  
+      // JSON -> Node[] 변환
+      const loadedNodes = sessionJSONToNodes(data);
+      
+      // 기존 Mindmap 지우고 새로 로드
+      setNodes(loadedNodes);
+      setEdges([]); // Edge 복원 로직이 없으면 일단 초기화
+  
+      // 세션 ID도 갱신
+      setSessionId(data.session_id);
+  
+      alert(`세션 #${data.session_id} 불러오기 완료!`);
+    } catch (err: any) {
+      console.error(err);
+      alert(`세션 불러오기 오류: ${err.message}`);
+    }
+  }
+
+  const handleNewSession = () => {
+    setNodes([]);
+    setEdges([]);
+    setSessionId((prev) => prev + 1);
+  }
+
+  const parsedIdeas = ideas
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
   return (
     <div className="w-full h-full bg-gray-100 relative">
-      <h1 className="absolute top-4 left-1/2 transform -translate-x-1/2 text-2xl font-bold text-black">
-        브레인스토밍 시스템
+      <h1 className="absolute top-20 left-1/2 transform -translate-x-1/2 text-2xl font-bold text-black">
+        브레인스토밍 시스템 (세션 #{sessionId})
       </h1>
 
       <div className="absolute top-4 left-4 flex items-center space-x-2 z-10">
         <button onClick={handleAddNode} className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-green-600 button">
           노드 생성
         </button>
+        <button onClick={handleSaveSession} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 button">
+          세션 저장
+        </button>
+        <select
+          value={visibility}
+          onChange={(e) => setVisibility(e.target.value)}
+          className="px-2 py-1 border rounded"
+        >
+          <option value="private">Private</option>
+          <option value="friends">Friends</option>
+          <option value="public">Public</option>
+        </select>
         <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 button" onClick={handleBrainstorm}>
           브레인스토밍 요청
         </button>
@@ -449,7 +645,7 @@ function Home() {
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onNodesChange={onNodesChange}
+        onNodesChange={handleNodesChange}
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         onPaneClick={handlePaneClick}
@@ -460,10 +656,20 @@ function Home() {
         maxZoom={10} 
       />
 
+      {/* 브레인스토밍 결과: 각 줄이 클릭되면 자식 노드 생성 */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-1/2 z-10">
-        <pre className="bg-white p-4 rounded shadow text-sm text-black h-40 overflow-auto">
-          {ideas}
-        </pre>
+        <div className="bg-white p-4 rounded shadow text-sm text-black h-40 overflow-auto">
+          {parsedIdeas.map((idea, idx) => (
+            <div
+              key={idx}
+              onClick={() => handleIdeaClick(idea.replace(/^\d+\.\s*/, ''))} 
+              // "1. A" -> "A" 로
+              className="cursor-pointer hover:bg-gray-100 p-1"
+            >
+              {idea}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
