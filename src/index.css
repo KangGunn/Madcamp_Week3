@@ -1,5 +1,5 @@
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif, 'Title';
   line-height: 1.5;
   font-weight: 400;
 
@@ -70,3 +70,8 @@ button:focus-visible {
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+  font-family: 'Title';
+  src: url('./assets/fonts/ChosunGs.TTF');
+}

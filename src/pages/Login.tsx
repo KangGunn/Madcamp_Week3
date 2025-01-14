@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import characterImage from '../assets/images/yame.png'
 
 function Login() {
   const [username, setUsername] = useState('');
@@ -53,18 +54,20 @@ function Login() {
 
   return (
     <div className="w-full h-screen bg-main flex flex-col items-center justify-center">
-      {/* Title */}
-      <h1 className="text-4xl font-bold text-white mb-8">영감님</h1>
-
-      Character Image
-      <img
-        src="/character.png" // 캐릭터 이미지를 public 폴더에 저장
-        alt="Character"
-        className="w-32 h-32 mb-8"
-      />
-
+      {/* Title & Image Container */}
+      <div className="flex items-center space-x-8 mb-12">
+        
+        {/* 캐릭터 이미지 */}
+        <img
+          src={characterImage} // 이미지 경로
+          alt="Character"
+          style={{ width: '500px', height: '400px' }}
+          className="w-200 h-80"
+        />
+      </div>
+  
       {/* Input Fields */}
-      <div className="flex flex-col items-center space-y-4">
+      <div className="flex flex-col items-center space-y-4 mb-8">
         <input
           type="text"
           placeholder="Username"
@@ -80,9 +83,9 @@ function Login() {
           className="w-64 px-3 py-2 border-b bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-0"
         />
       </div>
-
+  
       {/* Buttons */}
-      <div className="flex space-x-8 mt-6">
+      <div className="flex space-x-8">
         <button
           onClick={handleRegister}
           className="text-white border border-white px-4 py-2 rounded hover:bg-white hover:text-black"
@@ -96,7 +99,7 @@ function Login() {
           Login
         </button>
       </div>
-
+  
       {/* Error Message */}
       {errorMessage && (
         <p className="text-red-400 mt-6">
@@ -104,7 +107,7 @@ function Login() {
         </p>
       )}
     </div>
-  );
+  );  
 }
 
 export default Login;

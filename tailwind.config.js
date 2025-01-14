@@ -9,6 +9,9 @@ export default {
       colors: {
         main: "#1E293B",
       },
+      fontFamily: {
+        title: ['Title'],
+      }
     },
   },
   plugins: [],
