@@ -656,11 +656,9 @@ const Home = forwardRef((props: HomeProps, ref) => {
     }
   }
 
-  const handleNewSession = async () => {
+  const handleNewSession = async (newSessionId: number) => {
     setNodes([]);
     setEdges([]);
-
-    const newSessionId = props.sessionId;
 
     const rootId = uuidv4();
     const newNode: Node = {

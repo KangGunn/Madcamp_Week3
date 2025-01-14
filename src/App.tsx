@@ -19,13 +19,16 @@ function App() {
   const homeRef = useRef<any>(null);
 
   const handleNewSession = () => {
-    if (homeRef.current && typeof homeRef.current.handleNewSession === 'function') {
-      homeRef.current.handleNewSession();
-    }
+    console.log("sessions: ", sessions);
+    console.log("session.length: ", sessions.length);
 
     const newId = (sessions.length === 0) ? 1 : (sessions[sessions.length - 1].id + 1);
     setSessions((prev) => [...prev, { id: newId, title: `Session #${newId}` }]);
     setCurrentSessionId(newId);
+
+    if (homeRef.current && typeof homeRef.current.handleNewSession === 'function') {
+      homeRef.current.handleNewSession(newId);
+    }
   };
 
   const handleSelectSession = (sessionId: number) => {
