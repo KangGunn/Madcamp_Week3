@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import ReactFlow, {
   Node,
   Edge,
@@ -14,22 +14,7 @@ import { v4 as uuidv4 } from 'uuid'; // 고유 ID 생성용
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from 'react-router-dom';
 
-/**
- * 각 노드의 data 구조 예시:
- * {
- *   text: string;
- *   width: number;
- *   height: number;
- *   borderThickness: number;
- *   borderColor: string;
- *   backgroundColor: string;
- *   onRemove: (id: string) => void;
- *   onChange: (id: string, data: Partial<...>) => void;
- *   setSelectedNode: (id: string) => void;
- *   parentId: string | null; // 루트 노드의 경우 null
- *   depth: number;
- * }
- */
+let globalSessionId = 1;
 
 // --------------------- 노드 타입 등록 ---------------------
 const nodeTypes = {
@@ -172,9 +157,8 @@ function nodesToSessionJSON({
 }) {
   // 노드 정보를 session JSON format에 맞게 변환
   const nodeData = nodes.map((n) => ({
-    // node_id는 숫자로 변환 가능하면 숫자로, 안 되면 string 그대로
-    node_id: parseInt(n.id, 10) || n.id,
-    parent_id: n.data.parentId ? parseInt(n.data.parentId, 10) || n.data.parentId : null,
+    node_id: String(n.id), 
+    parent_id: n.data.parentId ? String(n.data.parentId) : null,
     depth: n.data.depth || 0,
     text: n.data.text || '',
     // (x, y) 위치도 저장
@@ -193,7 +177,7 @@ function nodesToSessionJSON({
 // JSON -> Node[] 변환 함수
 function sessionJSONToNodes(sessionJson: any): Node[] {
   return sessionJson.nodes.map((item: any) => ({
-    id: String(item.node_id),
+    id: String(item.id),
     type: 'ellipse',
     // 서버에서 받은 position_x, position_y 사용
     position: { x: item.position_x, y: item.position_y },
@@ -214,7 +198,17 @@ function sessionJSONToNodes(sessionJson: any): Node[] {
 }
 
 // --------------------- Home 컴포넌트 ---------------------
-function Home() {
+interface HomeProps {
+  sessionId: number;
+  setSessionId: (id: number) => void;
+}
+
+const Home = forwardRef((props: HomeProps, ref) => {
+  useImperativeHandle(ref, () => ({
+    handleLoadSession,
+    handleNewSession,
+  }));
+
   // --------------------- 상태 관련 ---------------------
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -222,7 +216,8 @@ function Home() {
   const [direction, setDirection] = useState('');
   const [ideas, setIdeas] = useState('');
   const [brainstormParentId, setBrainstormParentId] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState(1); // **세션 ID 상태 추가**
+  const [sessionId, setSessionId] = useState(globalSessionId); // **세션 ID 상태 추가**
+  const [sessionTitle, setSessionTitle] = useState('New Session');
   const [visibility, setVisibility] = useState('private'); // **공개 범위 상태 추가**
   const { user } = useAuth();
   const navigate = useNavigate(); // 리다이렉트 기능 추가
@@ -392,6 +387,7 @@ function Home() {
     }
     // 간단히, 위에서 만든 handleAddChildNode 재사용
     handleAddChildNode(selectedNodeId, '');
+    console.log(nodes);
   }, [handleAddChildNode, selectedNodeId]);
 
   // --------------------- 노드 삭제 ---------------------
@@ -529,26 +525,7 @@ function Home() {
     handleAddChildNode(brainstormParentId, ideaText);
   }, [brainstormParentId, handleAddChildNode]);
 
-  // ----------- 세션 저장 -----------
-  // 서버에 JSON 형태로 POST -> session_id는 서버에서 생성한다고 가정
-  const handleSaveSession = async () => {
-
-    if (!user) {
-      alert('로그인이 필요합니다.');
-      navigate('/login');
-      return;
-    }
-
-    const userId = user!.id;        // 임의
-
-    // Node[] -> JSON 변환
-    const sessionJson = nodesToSessionJSON({
-      sessionId,
-      userId,
-      visibility,
-      nodes,
-    });
-
+  const handleSaveSessionWithJson = async (sessionJson: any) => {
     try {
       const response = await fetch('http://13.209.75.24:3000/brainstorm/save_session_with_nodes', {
         method: 'POST',
@@ -565,11 +542,37 @@ function Home() {
       console.error(err);
       alert(`세션 저장 오류: ${err.message}`);
     }
+  }
+
+  // ----------- 세션 저장 -----------
+  // 서버에 JSON 형태로 POST -> session_id는 서버에서 생성한다고 가정
+  const handleSaveSession = async () => {
+    const userId = user!.id;
+    // console.log(userId);
+    // const userId = 2;
+
+    // Node[] -> JSON 변환
+    const sessionJson = nodesToSessionJSON({
+      sessionId,
+      userId,
+      visibility,
+      nodes,
+    });
+
+    try {
+      await handleSaveSessionWithJson(sessionJson); // 공통 로직 호출
+      // alert(`세션 #${sessionId} 저장 완료!`);
+    } catch (err: any) {
+      console.error(err);
+      alert('세션 저장 오류: ' + err.message);
+    }
   };
 
   const handleLoadSession = async (loadSessionId: number) => {
+    // console.log("handleLoadSession Called");
+
     try {
-      const response = await fetch(`http://13.209.75.24:3000/brainstorm/load_session/${loadSessionId}`, {
+      const response = await fetch(`http://13.209.75.24:3000/brainstorm/get_my_node_by_session/${user?.id}/${loadSessionId}`, {
         method: 'GET',
       });
       if (!response.ok) {
@@ -579,10 +582,23 @@ function Home() {
   
       // JSON -> Node[] 변환
       const loadedNodes = sessionJSONToNodes(data);
+      console.log(loadedNodes);
+
+      // Edge 복원 로직
+      const restoredEdges = loadedNodes
+        .filter((node) => node.data.parentId !== null) // 부모 노드가 있는 경우만
+        .map((node) => ({
+          id: `e${node.data.parentId}-${node.id}`, // Edge ID를 고유하게
+          source: String(node.data.parentId), // 부모 노드 ID
+          target: String(node.id), // 현재 노드 ID
+          type: 'smoothstep', // Edge 스타일 (ReactFlow 기본 제공)
+          animated: true, // 애니메이션
+          style: { stroke: '#000', strokeWidth: 2 }, // Edge 스타일
+      }));
       
       // 기존 Mindmap 지우고 새로 로드
       setNodes(loadedNodes);
-      setEdges([]); // Edge 복원 로직이 없으면 일단 초기화
+      setEdges(restoredEdges);
   
       // 세션 ID도 갱신
       setSessionId(data.session_id);
@@ -594,10 +610,54 @@ function Home() {
     }
   }
 
-  const handleNewSession = () => {
+  const handleNewSession = async () => {
     setNodes([]);
     setEdges([]);
-    setSessionId((prev) => prev + 1);
+
+    globalSessionId++;
+    setSessionId(globalSessionId);
+    const newSessionId = globalSessionId;
+
+    const rootId = uuidv4();
+    const newNode: Node = {
+      id: rootId,
+      type: 'ellipse',
+      position: { x: 50, y: 400 },
+      data: {
+        text: '',
+        width: 200,
+        height: 100,
+        borderThickness: 2,
+        borderColor: 'black',
+        backgroundColor: 'white',
+        onRemove: handleRemoveNode,
+        onChange: handleChangeNode,
+        setSelectedNode: (nodeId: string) => setSelectedNodeId(nodeId),
+        parentId: null,
+        depth: 0,
+      },
+    };
+    setNodes([newNode]);
+
+    const userId = user!.id;
+    // console.log(userId);
+    // const userId = 2;
+
+    // Node[] -> JSON 변환
+    const sessionJson = nodesToSessionJSON({
+      sessionId: newSessionId,
+      userId,
+      visibility,
+      nodes: [newNode],
+    });
+
+    try {
+      await handleSaveSessionWithJson(sessionJson); // 공통 로직 호출
+      alert(`새 세션 #${sessionId} 저장 완료!`);
+    } catch (err: any) {
+      console.error(err);
+      alert('새 세션 저장 오류: ' + err.message);
+    }
   }
 
   const parsedIdeas = ideas
@@ -673,6 +733,6 @@ function Home() {
       </div>
     </div>
   );
-}
+});
 
 export default Home;
