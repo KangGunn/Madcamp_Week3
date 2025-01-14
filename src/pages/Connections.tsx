@@ -140,7 +140,7 @@ const removeFriend = async (friendName) => {
       {showAddFriendModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-lg p-6 w-96">
-            <h2 className="text-lg font-bold mb-4">친구 추가</h2>
+            <h2 className="text-lg text-black font-bold mb-4">친구 추가</h2>
             <input
               type="text"
               placeholder="친구 이름 입력"
@@ -170,7 +170,7 @@ const removeFriend = async (friendName) => {
       {showFriendRequestsModal && (
   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
     <div className="bg-white rounded-lg p-6 w-[600px]">
-      <h2 className="text-lg font-bold mb-4">친구 요청</h2>
+      <h2 className="text-lg text-black font-bold mb-4">친구 요청</h2>
       {friendRequests.length === 0 ? (
         <p className="text-gray-500">받은 친구 요청이 없습니다.</p>
       ) : (
@@ -180,7 +180,7 @@ const removeFriend = async (friendName) => {
               key={request.requester_id}
               className="flex justify-between items-center bg-gray-100 rounded-lg p-4 shadow-md"
             >
-              <span>{request.requester_name}님이 친구 요청을 보냈습니다.</span>
+              <span className="text-black">{request.requester_name}님이 친구 요청을 보냈습니다.</span>
               <div className="space-x-2">
                 <button
                   onClick={() =>
@@ -215,7 +215,7 @@ const removeFriend = async (friendName) => {
   </div>
 )}
   <div className="mt-8 bg-gray-100 w-2/3 max-w-xl p-6">
-    <h2 className="text-lg font-bold mb-4">친구 목록</h2>
+    <h2 className="text-lg text-black font-bold mb-4">친구 목록</h2>
     {loading ? (
       <p className="text-gray-500">로딩 중...</p>
     ) : error ? (
@@ -227,7 +227,7 @@ const removeFriend = async (friendName) => {
         {friends.map((friend) => (
           <li
             key={friend.id}
-            className="flex justify-between items-center bg-gray-100 rounded-lg p-4 shadow-md"
+            className="flex justify-between items-center bg-gray-100 text-black rounded-lg p-4 shadow-md"
           >
             <span>{friend.username}</span>
             <button
