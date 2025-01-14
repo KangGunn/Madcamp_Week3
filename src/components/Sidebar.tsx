@@ -49,15 +49,16 @@ function Sidebar({ sessions, onNewSession, onSelectSession, onDeleteSession, cur
 
   return (
     <div className="relative w-60 bg-main text-white flex-col">
-      <div className="p-4 border-b border-main font-bold text-xl">
-        { user && (
-          <>
-            {user.username} 영감님
-          </>
+      <div className="p-4 border-b border-main flex items-baseline justify-center space-x-2">
+        {user && (
+            <>
+                <span className="font-title text-4xl leading-none">{user.username}</span>
+                <span className="font-title text-xl leading-none">영감님</span>
+            </>
         )}
-      </div>
+    </div>
 
-      <nav className="flex-1 p-2 space-y-2 mt-4">
+      <nav className="flex-1 p-2 space-y-2">
         <Link
           to="/home"
           className={`block px-3 py-2 rounded transition hover:bg-gray-700 ${activePage === 'Home' ? 'text-blue-500' : 'text-white'}`}
