@@ -321,6 +321,28 @@ const Home = forwardRef((props: HomeProps, ref) => {
         },
       };
       setNodes([rootNode]);
+
+      // 초기 세션 저장
+      const saveInitialSession = async () => {
+        const userId = user!.id;
+
+        const sessionJson = nodesToSessionJSON({
+          sessionId: globalSessionId,
+          userId,
+          visibility,
+          nodes: [rootNode],
+        });
+
+        try {
+          await handleSaveSessionWithJson(sessionJson); // 세션 저장
+          alert(`초기 세션 #${sessionId} 자동 저장 완료!`);
+        } catch (err: any) {
+          console.error(err);
+          alert('초기 세션 저장 오류: ' + err.message);
+        }
+      };
+
+      saveInitialSession(); // 저장 함수 호출
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -624,9 +646,9 @@ const Home = forwardRef((props: HomeProps, ref) => {
       setEdges(restoredEdges);
   
       // 세션 ID도 갱신
-      setSessionId(data.session_id);
+      setSessionId(loadSessionId);
   
-      alert(`세션 #${data.session_id} 불러오기 완료!`);
+      alert(`세션 #${loadSessionId} 불러오기 완료!`);
     } catch (err: any) {
       console.error(err);
       alert(`세션 불러오기 오류: ${err.message}`);
@@ -731,7 +753,7 @@ const Home = forwardRef((props: HomeProps, ref) => {
         onNodeDragStart={handleNodeDragStart}
         onNodeDrag={handleNodeDrag}
         onNodeDragStop={handleNodeDragStop}
-        minZoom={0.01} 
+        minZoom={0.1} 
         maxZoom={10} 
       />
 
