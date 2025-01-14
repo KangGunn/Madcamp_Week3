@@ -14,7 +14,7 @@ import { v4 as uuidv4 } from 'uuid'; // 고유 ID 생성용
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from 'react-router-dom';
 
-let globalSessionId = 1;
+// let globalSessionId = 1;
 
 // --------------------- 노드 타입 등록 ---------------------
 const nodeTypes = {
@@ -229,7 +229,8 @@ const Home = forwardRef((props: HomeProps, ref) => {
   const [direction, setDirection] = useState('');
   const [ideas, setIdeas] = useState('');
   const [brainstormParentId, setBrainstormParentId] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState(globalSessionId); // **세션 ID 상태 추가**
+  // const [sessionId, setSessionId] = useState(globalSessionId); // **세션 ID 상태 추가**
+  const { sessionId, setSessionId } = props;
   const [sessionTitle, setSessionTitle] = useState('New Session');
   const [visibility, setVisibility] = useState('private'); // **공개 범위 상태 추가**
   const { user } = useAuth();
@@ -327,7 +328,7 @@ const Home = forwardRef((props: HomeProps, ref) => {
         const userId = user!.id;
 
         const sessionJson = nodesToSessionJSON({
-          sessionId: globalSessionId,
+          sessionId,
           userId,
           visibility,
           nodes: [rootNode],
@@ -659,9 +660,7 @@ const Home = forwardRef((props: HomeProps, ref) => {
     setNodes([]);
     setEdges([]);
 
-    globalSessionId++;
-    setSessionId(globalSessionId);
-    const newSessionId = globalSessionId;
+    const newSessionId = props.sessionId;
 
     const rootId = uuidv4();
     const newNode: Node = {
@@ -698,7 +697,7 @@ const Home = forwardRef((props: HomeProps, ref) => {
 
     try {
       await handleSaveSessionWithJson(sessionJson); // 공통 로직 호출
-      alert(`새 세션 #${sessionId} 저장 완료!`);
+      alert(`새 세션 #${newSessionId} 저장 완료!`);
     } catch (err: any) {
       console.error(err);
       alert('새 세션 저장 오류: ' + err.message);
