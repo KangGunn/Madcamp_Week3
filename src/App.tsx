@@ -5,10 +5,11 @@ import Home from './pages/Home';
 import Connections from './pages/Connections';
 import Ideawall from './pages/Ideawall';
 import Login from './pages/Login';
-import { AuthProvider } from './context/AuthContext'; // AuthContext 사용
+import { AuthProvider, useAuth } from './context/AuthContext'; // AuthContext 사용
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
+  const { user } = useAuth();
   const [sessions, setSessions] = useState<{ id: number; title: string }[]>([
     { id: 1, title: 'Session #1' },
   ]);
@@ -36,6 +37,26 @@ function App() {
     setCurrentSessionId(sessionId);
   };
 
+  const onDeleteSession = async (sessionId: number) => {
+    try {
+      const response = await fetch(`http://13.209.75.24:3000/brainstorm/delete_session_and_node/${user?.id}/${sessionId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('세션 삭제 실패');
+      }
+
+      setSessions(prevSessions => prevSessions.filter(session => session.id !== sessionId));
+
+      alert(`세션 #${sessionId} 삭제 완료`);
+      // Optionally refresh the sessions list or redirect the user
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      alert("세션 삭제 중 오류 발생");
+    }
+  };
+  
+
   return (
     <AuthProvider>
       <BrowserRouter>
@@ -56,6 +77,7 @@ function App() {
                     sessions={sessions}
                     onNewSession={handleNewSession}
                     onSelectSession={handleSelectSession}
+                    onDeleteSession={onDeleteSession}
                     currentSessionId={currentSessionId}
                   />
                   <div className="flex-1 bg-gray-100 p-4 overflow-auto">
@@ -69,7 +91,6 @@ function App() {
                       }/>
                       <Route path="connections" element={<Connections />} />
                       <Route path="ideawall" element={<Ideawall />} />
-                      {/* <Route path="/" element={<Navigate to="home" replace />} /> */}
                     </Routes>
                   </div>
                 </div>

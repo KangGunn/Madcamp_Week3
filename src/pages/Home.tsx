@@ -157,13 +157,18 @@ function nodesToSessionJSON({
 }) {
   // 노드 정보를 session JSON format에 맞게 변환
   const nodeData = nodes.map((n) => ({
-    node_id: String(n.id), 
-    parent_id: n.data.parentId ? String(n.data.parentId) : null,
-    depth: n.data.depth || 0,
-    text: n.data.text || '',
-    // (x, y) 위치도 저장
-    position_x: n.position.x,
-    position_y: n.position.y,
+  // "node_id"는 서버가 int로 쓰든 말든 프론트쪽은 문자열로만 관리
+  // 서버에서 "node_id"를 무시한다고 했지만, 혹시나 쓰게 된다면
+  // 이렇게 문자열로 저장해도 문제없이 인식할 수 있음
+  node_id: String(n.id),
+
+  // parentId도 문자열로
+  parent_id: n.data.parentId != null ? String(n.data.parentId) : null,
+
+  depth: n.data.depth || 0,
+  text: n.data.text || '',
+  position_x: n.position.x,
+  position_y: n.position.y,
   }));
 
   return {
@@ -174,27 +179,35 @@ function nodesToSessionJSON({
   };
 }
 
-// JSON -> Node[] 변환 함수
+// --------------------- JSON -> Node[] 변환 함수 ---------------------
 function sessionJSONToNodes(sessionJson: any): Node[] {
-  return sessionJson.nodes.map((item: any) => ({
-    id: String(item.id),
-    type: 'ellipse',
-    // 서버에서 받은 position_x, position_y 사용
-    position: { x: item.position_x, y: item.position_y },
-    data: {
-      text: item.text || '',
-      width: 200,
-      height: 100,
-      borderThickness: 2,
-      borderColor: 'black',
-      backgroundColor: 'white',
-      onRemove: () => {},
-      onChange: () => {},
-      setSelectedNode: () => {},
-      parentId: item.parent_id ? String(item.parent_id) : null,
-      depth: item.depth || 0,
-    },
-  }));
+  return sessionJson.nodes.map((item: any) => {
+    const nodeId = item.id !== undefined ? String(item.id) : uuidv4();
+
+    let parentStr = null;
+    if (item.parent_id !== undefined && item.parent_id !== null && item.parent_id !== 0) {
+      parentStr = String(item.parent_id);
+    }
+
+    return {
+      id: nodeId,
+      type: 'ellipse',
+      position: { x: item.position_x, y: item.position_y },
+      data: {
+        text: item.text || '',
+        width: 200,
+        height: 100,
+        borderThickness: 2,
+        borderColor: 'black',
+        backgroundColor: 'white',
+        onRemove: () => {},
+        onChange: () => {},
+        setSelectedNode: () => {},
+        parentId: parentStr,
+        depth: item.depth || 0,
+      },
+    };
+  });
 }
 
 // --------------------- Home 컴포넌트 ---------------------
@@ -292,7 +305,7 @@ const Home = forwardRef((props: HomeProps, ref) => {
       const rootNode: Node = {
         id: rootId,
         type: 'ellipse',
-        position: { x: 50, y: 400 },
+        position: { x: 50, y: 200 },
         data: {
           text: '',
           width: newNodeWidth,
@@ -581,8 +594,18 @@ const Home = forwardRef((props: HomeProps, ref) => {
       const data = await response.json();
   
       // JSON -> Node[] 변환
-      const loadedNodes = sessionJSONToNodes(data);
+      let loadedNodes = sessionJSONToNodes(data);
       console.log(loadedNodes);
+
+      loadedNodes = loadedNodes.map(node => ({
+        ...node,
+        data: {
+          ...node.data,
+          onRemove: handleRemoveNode,
+          onChange: handleChangeNode,
+          setSelectedNode: (nodeId: string) => setSelectedNodeId(nodeId)
+        }
+      }));
 
       // Edge 복원 로직
       const restoredEdges = loadedNodes
@@ -622,7 +645,7 @@ const Home = forwardRef((props: HomeProps, ref) => {
     const newNode: Node = {
       id: rootId,
       type: 'ellipse',
-      position: { x: 50, y: 400 },
+      position: { x: 50, y: 200 },
       data: {
         text: '',
         width: 200,
@@ -667,10 +690,6 @@ const Home = forwardRef((props: HomeProps, ref) => {
 
   return (
     <div className="w-full h-full bg-gray-100 relative">
-      <h1 className="absolute top-20 left-1/2 transform -translate-x-1/2 text-2xl font-bold text-black">
-        브레인스토밍 시스템 (세션 #{sessionId})
-      </h1>
-
       <div className="absolute top-4 left-4 flex items-center space-x-2 z-10">
         <button onClick={handleAddNode} className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-green-600 button">
           노드 생성
