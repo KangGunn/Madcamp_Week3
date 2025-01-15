@@ -1,4 +1,11 @@
-import React, { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  forwardRef,
+  useImperativeHandle
+} from 'react';
 import ReactFlow, {
   Node,
   Edge,
@@ -12,11 +19,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from 'react-router-dom';
 
+// ----- 노드 타입 등록 -----
 const nodeTypes = {
   ellipse: EllipseNode,
 };
 
-// ----- 유틸 함수들 -----
+// ----- 유틸 함수 -----
 function getDescendants(parentId: string, nodes: Node[]): string[] {
   let childIds: string[] = [];
   nodes.forEach((n) => {
@@ -160,12 +168,10 @@ function nodesToSessionJSON({
 // JSON -> Node[]
 function sessionJSONToNodes(sessionJson: any): Node[] {
   return sessionJson.nodes.map((item: any) => {
-    // node_id가 문자열 형태 -> React Flow Node id도 동일
     const nodeId = String(item.node_id);
-    let parentStr = null;
-    if (item.parent_id !== undefined && item.parent_id !== null && item.parent_id !== 'null') {
-      parentStr = String(item.parent_id);
-    }
+    const parentStr = (item.parent_id !== undefined && item.parent_id !== null && item.parent_id !== 'null')
+      ? String(item.parent_id)
+      : null;
 
     return {
       id: nodeId,
@@ -195,8 +201,9 @@ interface HomeProps {
 
 const Home = forwardRef((props: HomeProps, ref) => {
   const { sessionId, setSessionId } = props;
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  const [nodes, setNodes] = useNodesState([]);
+  const [edges, setEdges] = useEdgesState([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [direction, setDirection] = useState('');
   const [ideas, setIdeas] = useState('');
@@ -206,9 +213,10 @@ const Home = forwardRef((props: HomeProps, ref) => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Undo
+  // --- Undo ---
   const undoStackRef = useRef<{ nodes: Node[]; edges: Edge[] }[]>([]);
   const [undoIndex, setUndoIndex] = useState(-1);
+
   const pushHistory = useCallback((newNodes: Node[], newEdges: Edge[]) => {
     undoStackRef.current = undoStackRef.current.slice(0, undoIndex + 1);
     undoStackRef.current.push({
@@ -217,6 +225,7 @@ const Home = forwardRef((props: HomeProps, ref) => {
     });
     setUndoIndex(undoStackRef.current.length - 1);
   }, [undoIndex]);
+
   const undoAction = useCallback(() => {
     if (undoIndex <= 0) return;
     const newIndex = undoIndex - 1;
@@ -251,75 +260,7 @@ const Home = forwardRef((props: HomeProps, ref) => {
     [setNodes]
   );
 
-  // 노드 추가 (빈 텍스트)
-  const handleAddNode = useCallback(() => {
-    if (!selectedNodeId) {
-      alert('부모 노드를 선택하세요.');
-      return;
-    }
-    handleAddChildNode(selectedNodeId, '');
-  }, [selectedNodeId]);
-
-  // 자식 노드 생성 (텍스트 지정 가능)
-  const handleAddChildNode = useCallback(
-    (parentId: string, text: string) => {
-      const parentNode = nodes.find((n) => n.id === parentId);
-      if (!parentNode) return;
-
-      const newNodeWidth = 200;
-      const newNodeHeight = 100;
-      const parentRightEdge = parentNode.position.x + parentNode.data.width / 2;
-      const defaultX = parentRightEdge + 50 + newNodeWidth / 2;
-
-      const siblings = nodes.filter((n) => n.data.parentId === parentId);
-      const shiftUp = 10;
-      const updatedSiblings = nodes.map((sib) => {
-        if (siblings.find((x) => x.id === sib.id)) {
-          return {
-            ...sib,
-            position: { ...sib.position, y: sib.position.y - shiftUp },
-          };
-        }
-        return sib;
-      });
-      setNodes(updatedSiblings);
-
-      const defaultY = parentNode.position.y + siblings.length * (newNodeHeight + 20);
-
-      const childId = uuidv4();
-      const childNode: Node = {
-        id: childId,
-        type: 'ellipse',
-        position: { x: defaultX, y: defaultY },
-        data: {
-          text,
-          width: newNodeWidth,
-          height: newNodeHeight,
-          borderThickness: 2,
-          borderColor: 'black',
-          backgroundColor: 'white',
-          onRemove: handleRemoveNode,
-          onChange: handleChangeNode,
-          setSelectedNode: (nodeId: string) => setSelectedNodeId(nodeId),
-          parentId: parentId,
-          depth: (parentNode.data.depth || 0) + 1,
-        },
-      };
-
-      const newEdge: Edge = {
-        id: `e${parentNode.id}-${childId}`,
-        source: parentNode.id,
-        target: childId,
-        type: 'smoothstep',
-        animated: true,
-        style: { stroke: '#000', strokeWidth: 2 },
-      };
-
-      setNodes((prev) => [...prev, childNode]);
-      setEdges((prev) => [...prev, newEdge]);
-    },
-    [nodes]
-  );
+  // (수정) childId should be consistent. Let's define it outside the setEdges call:
 
   // 노드 삭제
   const handleRemoveNode = useCallback((id: string) => {
@@ -328,7 +269,9 @@ const Home = forwardRef((props: HomeProps, ref) => {
       const updatedNodes = prevNodes.filter((node) => !descendantIds.includes(node.id));
       setEdges((prevEdges) =>
         prevEdges.filter(
-          (edge) => !descendantIds.includes(edge.source) && !descendantIds.includes(edge.target)
+          (edge) =>
+            !descendantIds.includes(edge.source) &&
+            !descendantIds.includes(edge.target)
         )
       );
       if (selectedNodeId && descendantIds.includes(selectedNodeId)) {
@@ -341,31 +284,164 @@ const Home = forwardRef((props: HomeProps, ref) => {
   // 노드 수정
   const handleChangeNode = useCallback((id: string, updatedData: Partial<Node['data']>) => {
     setNodes((prev) =>
-      prev.map((node) => 
+      prev.map((node) =>
         node.id === id ? { ...node, data: { ...node.data, ...updatedData } } : node
       )
     );
   }, []);
 
+  // ----- 초기 루트 노드 생성 (계정 당 최초 1회만) [수정된 부분] -----
+  const [alreadyInit, setAlreadyInit] = useState(false);
+  useEffect(() => {
+    const flagKey = `initialSessionCreated_${user?.id}`;
+    const alreadyCreated = localStorage.getItem(flagKey);
+    if (alreadyCreated) return; // 이미 초기 생성되었다면 중단
+    if (nodes.length === 0) {
+      setAlreadyInit(true);
+      const rootId = uuidv4();
+      const newNodeWidth = 200;
+      const newNodeHeight = 100;
+      const rootNode: Node = {
+        id: rootId,
+        type: 'ellipse',
+        position: { x: 50, y: 200 },
+        data: {
+          text: '',
+          width: newNodeWidth,
+          height: newNodeHeight,
+          borderThickness: 2,
+          borderColor: 'black',
+          backgroundColor: 'white',
+          onRemove: handleRemoveNode,
+          onChange: handleChangeNode,
+          setSelectedNode: (nodeId: string) => setSelectedNodeId(nodeId),
+          parentId: null,
+          depth: 0,
+        },
+      };
+      setNodes([rootNode]);
+      const saveInitialSession = async () => {
+        if (!user) return;
+        const userId = user.id;
+        const sessionJson = nodesToSessionJSON({
+          sessionId,
+          userId,
+          visibility,
+          nodes: [rootNode],
+        });
+        try {
+          await handleSaveSessionWithJson(sessionJson);
+          console.log(`초기 세션 #${sessionId} 자동 저장 완료!`);
+          localStorage.setItem(flagKey, 'true');
+        } catch (err: any) {
+          console.error(err);
+          alert('초기 세션 저장 오류: ' + err.message);
+        }
+      };
+      saveInitialSession();
+    }
+  }, [user, nodes, sessionId, visibility, handleRemoveNode, handleChangeNode]);
+
+  // ----- 자식 노드 생성 (텍스트 지정 가능) [수정된 부분] -----
+  const handleAddChildNode = useCallback((parentId: string, text: string) => {
+    // declare childId variable outside
+    let generatedChildId = '';
+    setNodes((prevNodes) => {
+      const parentNode = prevNodes.find((n) => n.id === parentId);
+      if (!parentNode) return prevNodes;
+      const newNodeWidth = 200;
+      const newNodeHeight = 100;
+      const OFFSET = 50;
+      const parentRightEdge = parentNode.position.x + parentNode.data.width / 2;
+      const defaultX = parentRightEdge + OFFSET + newNodeWidth / 2;
+      const siblings = prevNodes.filter((n) => n.data.parentId === parentId);
+      const shiftUp = 10;
+      const updated = prevNodes.map((sib) => {
+        if (siblings.find((x) => x.id === sib.id)) {
+          return {
+            ...sib,
+            position: {
+              ...sib.position,
+              y: sib.position.y - shiftUp,
+            },
+          };
+        }
+        return sib;
+      });
+      const defaultY = parentNode.position.y + siblings.length * (newNodeHeight + 20);
+      generatedChildId = uuidv4();
+      const childNode: Node = {
+        id: generatedChildId,
+        type: 'ellipse',
+        position: { x: defaultX, y: defaultY },
+        data: {
+          text,
+          width: newNodeWidth,
+          height: newNodeHeight,
+          borderThickness: 2,
+          borderColor: 'black',
+          backgroundColor: 'white',
+          onRemove: handleRemoveNode,
+          onChange: handleChangeNode,
+          setSelectedNode: (nodeId: string) => setSelectedNodeId(nodeId),
+          parentId,
+          depth: (parentNode.data.depth || 0) + 1,
+        },
+      };
+      return [...updated, childNode];
+    });
+    // 이제 같은 generatedChildId 를 사용하여 edge 업데이트 (부모 → 자식)
+    setEdges((prevEdges) => {
+      if (generatedChildId) {
+        const newEdge: Edge = {
+          id: `e${parentId}-${generatedChildId}`,
+          source: parentId,
+          target: generatedChildId,
+          type: 'smoothstep',
+          animated: true,
+          style: { stroke: '#000', strokeWidth: 2 },
+        };
+        return [...prevEdges, newEdge];
+      }
+      return prevEdges;
+    });
+  }, [handleRemoveNode, handleChangeNode]);
+
+
+  // ----- 자식 노드 생성(빈 텍스트)
+  const handleAddNode = useCallback(() => {
+    if (!selectedNodeId) {
+      alert('부모 노드를 선택하세요.');
+      return;
+    }
+    handleAddChildNode(selectedNodeId, '');
+  }, [selectedNodeId, handleAddChildNode]);
+
   // 드래그
   const dragStartPositionsRef = useRef<{ [key: string]: { x: number; y: number } }>({});
-  const handleNodeDragStart = useCallback((e, node) => {
-    const groupIds = [node.id, ...getDescendants(node.id, nodes)];
-    groupIds.forEach((id) => {
-      const found = nodes.find((n) => n.id === id);
-      if (found) {
-        dragStartPositionsRef.current[id] = { ...found.position };
-      }
+  const handleNodeDragStart = useCallback((_, node) => {
+    setSelectedNodeId(node.id); // (수정) 드래그 시작 시 현재 노드를 선택 상태로
+    setNodes((prevNodes) => {
+      const groupIds = [node.id, ...getDescendants(node.id, prevNodes)];
+      groupIds.forEach((id) => {
+        const found = prevNodes.find((n) => n.id === id);
+        if (found) {
+          dragStartPositionsRef.current[id] = { ...found.position };
+        }
+      });
+      return prevNodes;
     });
-  }, [nodes]);
-  const handleNodeDrag = useCallback((e, node) => {
-    const groupIds = [node.id, ...getDescendants(node.id, nodes)];
-    const stored = dragStartPositionsRef.current;
-    if (!stored[node.id]) return;
-    const deltaX = node.position.x - stored[node.id].x;
-    const deltaY = node.position.y - stored[node.id].y;
-    setNodes((nds) =>
-      nds.map((n) => {
+  }, []);
+
+  const handleNodeDrag = useCallback((_, node) => {
+    setNodes((prevNodes) => {
+      const groupIds = [node.id, ...getDescendants(node.id, prevNodes)];
+      const stored = dragStartPositionsRef.current;
+      if (!stored[node.id]) return prevNodes;
+      const deltaX = node.position.x - stored[node.id].x;
+      const deltaY = node.position.y - stored[node.id].y;
+
+      const newNodes = prevNodes.map((n) => {
         if (groupIds.includes(n.id) && stored[n.id]) {
           return {
             ...n,
@@ -376,31 +452,36 @@ const Home = forwardRef((props: HomeProps, ref) => {
           };
         }
         return n;
-      })
-    );
-  }, [nodes]);
-  const handleNodeDragStop = useCallback((e, node) => {
-    const groupIds = [node.id, ...getDescendants(node.id, nodes)];
-    setNodes((nds) => applyXConstraint(nds, groupIds, 50));
-    setNodes((nds) => resolveDragGroupCollisions(groupIds, nds));
-    setNodes((nds) => resolveSiblingCollisions(nds, node.data.parentId));
-  }, [nodes]);
+      });
+      return newNodes;
+    });
+  }, []);
+
+  const handleNodeDragStop = useCallback((_, node) => {
+    setNodes((prevNodes) => {
+      const groupIds = [node.id, ...getDescendants(node.id, prevNodes)];
+      let newNodes = applyXConstraint(prevNodes, groupIds, 50);
+      newNodes = resolveDragGroupCollisions(groupIds, newNodes);
+      newNodes = resolveSiblingCollisions(newNodes, node.data.parentId);
+      return newNodes;
+    });
+  }, []);
 
   // 브레인스토밍
-  const handleBrainstorm = async () => {
+  const handleBrainstormClick = useCallback(async () => {
     if (!selectedNodeId) {
       alert('노드를 먼저 선택하세요.');
       return;
     }
-    const selectedNode = nodes.find((n) => n.id === selectedNodeId);
-    if (!selectedNode) return;
+    const parentNode = nodes.find((n) => n.id === selectedNodeId);
+    if (!parentNode) return;
     try {
       setBrainstormParentId(selectedNodeId);
       const response = await fetch('http://13.209.75.24:3000/brainstorm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          keyword: selectedNode.data.text || '',
+          keyword: parentNode.data.text || '',
           direction,
         }),
       });
@@ -411,14 +492,17 @@ const Home = forwardRef((props: HomeProps, ref) => {
       console.error(error);
       setIdeas(`오류: ${error.message}`);
     }
-  };
+  }, [selectedNodeId, direction, nodes]);
+
   const handleIdeaClick = useCallback((ideaText: string) => {
     if (!brainstormParentId) return;
     handleAddChildNode(brainstormParentId, ideaText);
   }, [brainstormParentId, handleAddChildNode]);
 
-  // 클릭 해제
+  // 배경 클릭 -> 선택 해제
   const handlePaneClick = useCallback(() => {
+    // (수정) 자식 노드 생성 이후에도 선택이 풀리지 않도록
+    // 다만, 여기서는 배경을 클릭하면 의도적으로 선택 해제를 유지
     setSelectedNodeId(null);
   }, []);
 
@@ -459,18 +543,20 @@ const Home = forwardRef((props: HomeProps, ref) => {
 
   // 세션 불러오기
   const handleLoadSession = useCallback(async (loadSessionId: number) => {
+    if (!user) return;
     try {
-      const response = await fetch(`http://13.209.75.24:3000/brainstorm/get_my_node_by_session/${user?.id}/${loadSessionId}`, {
+      const response = await fetch(`http://13.209.75.24:3000/brainstorm/get_my_node_by_session/${user.id}/${loadSessionId}`, {
         method: 'GET',
       });
       if (!response.ok) {
         throw new Error('세션 불러오기 실패');
       }
       const data = await response.json();
+
       setVisibility(data.session.visibility);
 
-      // JSON -> Node[]
       let loadedNodes = sessionJSONToNodes(data);
+
       // Edge 복원
       const restoredEdges: Edge[] = [];
       loadedNodes.forEach((node) => {
@@ -486,7 +572,8 @@ const Home = forwardRef((props: HomeProps, ref) => {
           });
         }
       });
-      // onRemove/onChange 설정
+
+      // onRemove/onChange 등 콜백 주입
       loadedNodes = loadedNodes.map((n) => ({
         ...n,
         data: {
@@ -561,7 +648,6 @@ const Home = forwardRef((props: HomeProps, ref) => {
     handleNewSession
   }));
 
-  // 브레인스토밍 아이디어 목록
   const parsedIdeas = ideas
     .split('\n')
     .map((line) => line.trim())
@@ -569,9 +655,8 @@ const Home = forwardRef((props: HomeProps, ref) => {
 
   return (
     <div className="w-full h-full bg-gray-100 relative">
-      {/* 상단 왼쪽: 브레인스토밍 요청/노드 생성 */}
+      {/* 상단 왼쪽 */}
       <div className="absolute top-4 left-4 flex items-center space-x-2 z-10">
-        {/* 입력창(주제) */}
         <input
           className="px-3 py-2 border rounded w-64"
           type="text"
@@ -580,20 +665,20 @@ const Home = forwardRef((props: HomeProps, ref) => {
           onChange={(e) => setDirection(e.target.value)}
         />
         <button
-          className="px-4 py-2 shadow-md bg-blue-500 text-white rounded hover:bg-blue-600 button"
-          onClick={handleBrainstorm}
+          className="px-4 py-2 shadow-md bg-blue-500 text-white rounded hover:bg-blue-600"
+          onClick={handleBrainstormClick}
         >
           브레인스토밍
         </button>
         <button
           onClick={handleAddNode}
-          className="px-4 py-2 shadow-md bg-gray-500 text-white rounded hover:bg-green-600 button"
+          className="px-4 py-2 shadow-md bg-gray-500 text-white rounded hover:bg-green-600"
         >
           자식 노드 생성
         </button>
       </div>
 
-      {/* 상단 오른쪽: 공개 범위 + 세션 저장 */}
+      {/* 상단 오른쪽 */}
       <div className="absolute top-4 right-4 flex items-center space-x-2 z-10">
         <select
           value={visibility}
@@ -606,7 +691,7 @@ const Home = forwardRef((props: HomeProps, ref) => {
         </select>
         <button
           onClick={handleSaveSession}
-          className="px-4 py-2 shadow-md bg-blue-500 text-white rounded hover:bg-blue-600 button"
+          className="px-4 py-2 shadow-md bg-blue-500 text-white rounded hover:bg-blue-600"
         >
           세션 저장
         </button>
@@ -616,9 +701,9 @@ const Home = forwardRef((props: HomeProps, ref) => {
         nodes={nodes}
         edges={edges}
         onNodesChange={handleNodesChange}
-        onEdgesChange={onEdgesChange}
+        // onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
-        onPaneClick={() => setSelectedNodeId(null)}
+        onPaneClick={handlePaneClick}
         onNodeDragStart={handleNodeDragStart}
         onNodeDrag={handleNodeDrag}
         onNodeDragStop={handleNodeDragStop}
@@ -626,7 +711,7 @@ const Home = forwardRef((props: HomeProps, ref) => {
         maxZoom={10}
       />
 
-      {/* 하단: 브레인스토밍 결과 */}
+      {/* 브레인스토밍 아이디어 목록 */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-1/2 z-10">
         <div className="bg-white p-4 rounded shadow text-sm text-black h-40 overflow-auto">
           {parsedIdeas.map((idea, idx) => (
