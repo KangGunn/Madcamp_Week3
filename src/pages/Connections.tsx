@@ -5,20 +5,20 @@ import request_friends from "../assets/image/request_friend.png";
 import axios from "axios";
 
 function Connections() {
-  const { user } = useAuth(); // 현재 사용자 정보 가져오기
-  const [friends, setFriends] = useState([]); // 친구 목록 상태
-  const [friendRequests, setFriendRequests] = useState([]); // 친구 요청 목록 상태
-  const [loading, setLoading] = useState(true); // 로딩 상태 관리
-  const [error, setError] = useState(null); // 에러 상태 관리
-  const [showAddFriendModal, setShowAddFriendModal] = useState(false); // 친구 추가 모달 창 표시 상태
-  const [showFriendRequestsModal, setShowFriendRequestsModal] = useState(false); // 친구 요청 모달 창 표시 상태
+  const { user } = useAuth(); // 현재 사용자 정보
+  const [friends, setFriends] = useState([]); // 친구 목록
+  const [friendRequests, setFriendRequests] = useState([]); // 친구 요청 목록
+  const [loading, setLoading] = useState(true); // 로딩 상태
+  const [error, setError] = useState(null); // 에러 상태
+  const [showAddFriendModal, setShowAddFriendModal] = useState(false); // 친구 추가 모달
+  const [showFriendRequestsModal, setShowFriendRequestsModal] = useState(false); // 친구 요청 모달
   const [friendName, setFriendName] = useState(""); // 입력된 친구 이름
 
   // ▼ 추가된 state들 ▼
-  const [selectedFriend, setSelectedFriend] = useState<string | null>(null); // "세션 보기" 버튼 누른 친구
-  const [friendSessions, setFriendSessions] = useState<any[]>([]);   // 해당 친구의 세션 목록
-  const [showPanel, setShowPanel] = useState(false);          // 오른쪽 세션 패널 표시 여부
-  const [loadingSessions, setLoadingSessions] = useState(false); // 친구 세션 로딩 상태
+  const [selectedFriend, setSelectedFriend] = useState<string | null>(null); 
+  const [friendSessions, setFriendSessions] = useState<any[]>([]); 
+  const [showPanel, setShowPanel] = useState(false);    
+  const [loadingSessions, setLoadingSessions] = useState(false); 
 
   // 친구 목록 가져오기
   const fetchFriends = async () => {
@@ -26,12 +26,12 @@ function Connections() {
       const response = await axios.get(
         `http://13.209.75.24:3000/friends/${user.username}/list`
       );
-      setFriends(response.data.friends || []); // 서버에서 받은 데이터 저장
-      setLoading(false); // 로딩 완료
+      setFriends(response.data.friends || []);
+      setLoading(false);
     } catch (err) {
       console.error("친구 목록 가져오기 실패:", err);
       setError("친구 목록을 가져오는 데 실패했습니다.");
-      setLoading(false); // 로딩 종료
+      setLoading(false);
     }
   };
 
@@ -41,8 +41,8 @@ function Connections() {
       const response = await axios.get(
         `http://13.209.75.24:3000/friends/${user.username}/requests`
       );
-      setFriendRequests(response.data.friend_requests || []); // 서버에서 받은 데이터 저장
-      setShowFriendRequestsModal(true); // 친구 요청 모달 창 표시
+      setFriendRequests(response.data.friend_requests || []);
+      setShowFriendRequestsModal(true);
     } catch (err) {
       console.error("친구 요청 목록 가져오기 실패:", err);
       setError("친구 요청 목록을 가져오는 데 실패했습니다.");
@@ -61,8 +61,8 @@ function Connections() {
         friend_username: friendName,
       });
       alert(`친구 요청을 보냈습니다: ${friendName}`);
-      setFriendName(""); // 입력 필드 초기화
-      setShowAddFriendModal(false); // 모달 닫기
+      setFriendName("");
+      setShowAddFriendModal(false);
     } catch (err) {
       console.error("친구 요청 실패:", err);
       alert("친구 요청을 보내는 데 실패했습니다.");
@@ -82,7 +82,7 @@ function Connections() {
           ? `${requester_name}의 요청을 수락했습니다.`
           : `${requester_name}의 요청을 거절했습니다.`
       );
-      // 처리된 요청을 목록에서 제거
+      // 처리된 요청 제거
       setFriendRequests((prev) =>
         prev.filter((req) => req.requester_name !== requester_name)
       );
@@ -97,12 +97,11 @@ function Connections() {
     try {
       await axios.delete("http://13.209.75.24:3000/friends/remove", {
         data: {
-          user_username: user.username, // 현재 사용자 이름
-          friend_username: friendName, // 삭제할 친구 이름
+          user_username: user.username,
+          friend_username: friendName,
         },
       });
       alert(`${friendName}님을 삭제했습니다.`);
-      // 친구 목록에서 제거
       setFriends((prev) =>
         prev.filter((friend) => friend.username !== friendName)
       );
@@ -112,7 +111,7 @@ function Connections() {
     }
   };
 
-  // ▼ 추가된 함수: 특정 친구 세션 가져오기 ▼
+  // ▼ 특정 친구 세션 가져오기 ▼
   const handleFetchFriendSessions = async (friendName: string) => {
     if (!user?.username) {
       return alert("로그인이 필요합니다.");
@@ -125,12 +124,65 @@ function Connections() {
       );
       setFriendSessions(res.data.sessions || []);
       setSelectedFriend(friendName);
-      setShowPanel(true); // 패널 열기
+      setShowPanel(true);
     } catch (err) {
       console.error("친구 세션 가져오기 실패:", err);
       alert("세션을 가져오는 데 실패했습니다.");
     } finally {
       setLoadingSessions(false);
+    }
+  };
+
+  // ▼ "세션 가져오기" (복제) 함수 ▼
+  const handleCloneSession = async (session: any) => {
+    try {
+      // 1) 내 user.id 로 현재 최대 세션 ID 조회
+      const maxRes = await axios.get(
+        `http://13.209.75.24:3000/brainstorm/max/${user.id}`
+      );
+      const currentMaxSessionId = maxRes.data?.session_id ?? 0;
+      const newSessionId = currentMaxSessionId + 1;
+
+      // 2) 친구 세션의 user_id (ex. session.user_id)
+      const friendUserId = session.user_id;
+      console.log("세션 정보:", session);
+      if (!friendUserId) {
+        return alert("해당 세션 정보에 friend_user_id(또는 user_id)가 없습니다.");
+      }
+
+      // 3) 노드 정보 가져오기: GET /brainstorm/get_my_node_by_session/:friendUserId/:session_id
+      const nodeRes = await axios.get(
+        `http://13.209.75.24:3000/brainstorm/get_my_node_by_session/${friendUserId}/${session.session_id}`
+      );
+      // nodeRes.data = { session: {...}, nodes: [...] }
+      const friendSessionData = nodeRes.data.session;
+      const friendNodes = nodeRes.data.nodes;
+
+      // 4) 노드 배열에서 session_id만 새 세션 번호로 교체
+      //    (필요하면 node.id = 0 처럼 초기화 가능)
+      const copiedNodes = friendNodes.map((node: any) => ({
+        ...node,
+        session_id: newSessionId, 
+      }));
+
+      // 5) 서버로 보낼 JSON 형식 (session_title 제거, 형식 맞춤)
+      const requestBody = {
+        session_id: newSessionId,
+        user_id: user.id, // 내 user_id
+        visibility: friendSessionData.visibility || "public",
+        nodes: copiedNodes,
+      };
+
+      // 6) POST /brainstorm/save_session_with_nodes
+      await axios.post(
+        "http://13.209.75.24:3000/brainstorm/save_session_with_nodes",
+        requestBody
+      );
+
+      alert("세션을 성공적으로 가져왔습니다!");
+    } catch (error) {
+      console.error("세션 가져오기(복제) 실패:", error);
+      alert("세션을 가져오는 데 실패했습니다.");
     }
   };
 
@@ -141,7 +193,7 @@ function Connections() {
     setFriendSessions([]);
   };
 
-  // 초기 렌더링 시 친구 목록 요청
+  // 컴포넌트 마운트 시 친구 목록
   useEffect(() => {
     if (user?.username) {
       fetchFriends();
@@ -275,14 +327,15 @@ function Connections() {
               >
                 <span>{friend.username}</span>
                 <div className="space-x-2">
-                  {/* 기존 삭제 버튼 */}
+                  {/* 친구 삭제 */}
                   <button
                     className="bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600"
                     onClick={() => removeFriend(friend.username)}
                   >
                     삭제
                   </button>
-                  {/* ▼ 추가된 버튼: 세션 보기 ▼ */}
+
+                  {/* 친구 세션 보기 */}
                   <button
                     className="bg-blue-500 text-white px-2 py-1 rounded-lg hover:bg-blue-600"
                     onClick={() => handleFetchFriendSessions(friend.username)}
@@ -296,7 +349,7 @@ function Connections() {
         )}
       </div>
 
-      {/* ▼ 오른쪽에서 슬라이드되는 세션 패널 ▼ */}
+      {/* 오른쪽에서 슬라이드되는 세션 패널 */}
       <div
         className={`
           fixed top-0 right-0 w-3/4 sm:w-1/2 md:w-1/3 lg:w-1/4 h-screen bg-white shadow-xl p-6
@@ -316,17 +369,9 @@ function Connections() {
         ) : selectedFriend ? (
           <>
             <h2 className="text-lg font-bold mb-4">{selectedFriend}님의 세션</h2>
-            {/**
-             * 여기서 공개/친구 세션만 보려면 visibility 필터링
-             * (원치 않으시면 삭제 가능)
-             */}
-            {/**
-             * 예: public 또는 friends 만 보여주기
-             */}
             {(() => {
               const visibleSessions = friendSessions.filter(
-                (s) =>
-                  s.visibility === "public" || s.visibility === "friends"
+                (s) => s.visibility === "public" || s.visibility === "friends"
               );
 
               if (visibleSessions.length === 0) {
@@ -347,13 +392,19 @@ function Connections() {
                       <h3 className="font-semibold">
                         {session.session_title?.trim() || "NO TITLE"}
                       </h3>
-                      <p className="text-sm">
-                        공개 범위: {session.visibility}
-                      </p>
+                      <p className="text-sm">공개 범위: {session.visibility}</p>
                       <p className="text-xs text-gray-500">
                         작성일:{" "}
                         {new Date(session.created_at).toLocaleDateString()}
                       </p>
+
+                      {/* ▼ "세션 가져오기" 버튼 ▼ */}
+                      <button
+                        onClick={() => handleCloneSession(session)}
+                        className="mt-2 bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
+                      >
+                        세션 가져오기
+                      </button>
                     </li>
                   ))}
                 </ul>
