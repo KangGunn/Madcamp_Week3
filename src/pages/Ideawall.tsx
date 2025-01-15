@@ -106,7 +106,7 @@ function Ideawall() {
                 {/* 친구 추가 버튼 영역 */}
                 <button
                   onClick={() => handleAddFriend(session.owner)}
-                  className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600"
+                  className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600"
                 >
                   친구 추가
                 </button>

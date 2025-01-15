@@ -59,41 +59,41 @@ function Sidebar({ sessions, onNewSession, onSelectSession, onDeleteSession, cur
       <nav className="flex-1 p-2 space-y-2">
         <Link
           to="/home"
-          className={`block px-3 py-2 rounded transition hover:bg-gray-700 ${activePage === 'Home' ? 'text-blue-500' : 'text-white'}`}
+          className={`font-title text-xl block px-3 py-2 rounded transition hover:bg-gray-700 ${activePage === 'Home' ? 'text-blue-500' : 'text-white'}`}
         >
-          Home
+          홈
         </Link>
         <Link
           to="/connections"
-          className={`block px-3 py-2 rounded transition hover:bg-gray-700 ${activePage === 'Connections' ? 'text-blue-500' : 'text-white'}`}
+          className={`font-title text-xl block px-3 py-2 rounded transition hover:bg-gray-700 ${activePage === 'Connections' ? 'text-blue-500' : 'text-white'}`}
         >
-          Connections
+          친구
         </Link>
         <Link
           to="/ideawall"
-          className={`block px-3 py-2 rounded transition hover:bg-gray-700 ${activePage === 'Idea Wall' ? 'text-blue-500' : 'text-white'}`}
+          className={`font-title text-xl block px-3 py-2 rounded transition hover:bg-gray-700 ${activePage === 'Idea Wall' ? 'text-blue-500' : 'text-white'}`}
         >
-          Idea Wall
+          게시판
         </Link>
       </nav>
 
       <div className="p-4 border-t border-gray-700 text-sm">
         {activePage === "Home" && (
           <>
-            <div className="mb-2 font-bold text-center">Mindmaps</div>
+            <div className="mb-2 font-bold text-lg text-center">나의 마인드맵</div>
 
             <button
               onClick={onNewSession}
               className="mt-2 mb-2 w-full px-3 py-2 bg-gray-700 rounded hover:bg-gray-600 transition"
             >
-              New Session
+              새로 만들기
             </button>
 
             <div className="space-y-1">
               {sessions.map((sess) => {
                 const displayTitle = sess.title?.trim().length
                   ? sess.title
-                  : `Session #${sess.id}`;
+                  : `마인드맵 #${sess.id}`;
 
                 return (
                   <div

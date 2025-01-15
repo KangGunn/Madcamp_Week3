@@ -207,14 +207,14 @@ function Connections() {
         <div className="flex space-x-4">
           {/* 친구 추가 버튼 */}
           <button
-            className="bg-customGray text-white px-2 py-2 rounded-lg hover:bg-green-600 flex justify-center items-center"
+            className="bg-customGray text-white px-2 py-2 rounded-lg hover:bg-blue-500 flex justify-center items-center"
             onClick={() => setShowAddFriendModal(true)}
           >
             <img src={add_friends} alt="친구추가" className="w-6 h-6" />
           </button>
           {/* 친구 요청 버튼 */}
           <button
-            className="bg-customGray text-white px-2 py-2 rounded-lg hover:bg-blue-600 flex justify-center items-center"
+            className="bg-customGray text-white px-2 py-2 rounded-lg hover:bg-blue-500 flex justify-center items-center"
             onClick={fetchFriendRequests}
           >
             <img src={request_friends} alt="친구요청" className="w-6 h-6" />
@@ -243,7 +243,7 @@ function Connections() {
               </button>
               <button
                 onClick={sendFriendRequest}
-                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
               >
                 확인
               </button>
@@ -277,7 +277,7 @@ function Connections() {
                             "accepted"
                           )
                         }
-                        className="bg-green-500 text-white px-2 py-1 rounded-lg hover:bg-green-600"
+                        className="bg-blue-500 text-white px-2 py-1 rounded-lg hover:bg-blue-600"
                       >
                         수락
                       </button>
@@ -401,7 +401,7 @@ function Connections() {
                       {/* ▼ "세션 가져오기" 버튼 ▼ */}
                       <button
                         onClick={() => handleCloneSession(session)}
-                        className="mt-2 bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
+                        className="mt-2 bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
                       >
                         세션 가져오기
                       </button>
