@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
@@ -10,13 +10,25 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   const { user } = useAuth();
-  const [sessions, setSessions] = useState<{ id: number; title: string }[]>([
-    { id: 1, title: 'Session #1' },
-  ]);
-
-  const [currentSessionId, setCurrentSessionId] = useState(1);
+  const [sessions, setSessions] = useState<{ id: number; title: string }[]>(() => {
+    const stored = localStorage.getItem('sessions');
+    return stored ? JSON.parse(stored) : [{ id: 1, title: 'Session #1' }];
+  });
+  const [currentSessionId, setCurrentSessionId] = useState<number>(() => {
+    const stored = localStorage.getItem('currentSessionId');
+    return stored ? JSON.parse(stored) : 1;
+  });
 
   const homeRef = useRef<any>(null);
+
+  // sessions 혹은 currentSessionId가 변경될 때마다 로컬 스토리지에 저장합니다.
+  useEffect(() => {
+    localStorage.setItem('sessions', JSON.stringify(sessions));
+  }, [sessions]);
+
+  useEffect(() => {
+    localStorage.setItem('currentSessionId', JSON.stringify(currentSessionId));
+  }, [currentSessionId]);
 
   const handleNewSession = () => {
     console.log("sessions: ", sessions);

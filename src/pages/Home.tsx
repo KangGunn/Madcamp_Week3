@@ -615,6 +615,8 @@ const Home = forwardRef((props: HomeProps, ref) => {
         throw new Error('세션 불러오기 실패');
       }
       const data = await response.json();
+
+      setVisibility(data.session.visibility);
   
       // JSON -> Node[] 변환
       let loadedNodes = sessionJSONToNodes(data);
@@ -709,37 +711,45 @@ const Home = forwardRef((props: HomeProps, ref) => {
 
   return (
     <div className="w-full h-full bg-gray-100 relative">
+      {/* 왼쪽 위: 상황 입력, 브레인스토밍, 자식 노드 생성 */}
       <div className="absolute top-4 left-4 flex items-center space-x-2 z-10">
-        <button onClick={handleAddNode} className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-green-600 button">
-          노드 생성
+        {/* 상황 입력 */}
+        <input
+          className="px-3 py-2 border rounded w-64"
+          type="text"
+          placeholder="상황을 입력하세요"
+          value={direction}
+          onChange={(e) => setDirection(e.target.value)}
+        />
+        {/* 브레인스토밍 요청 */}
+        <button className="px-4 py-2 shadow-md bg-blue-500 text-white rounded hover:bg-blue-600 button" onClick={handleBrainstorm}>
+          브레인스토밍
         </button>
-        <button onClick={handleSaveSession} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 button">
-          세션 저장
+        {/* 자식 노드 생성 */}
+        <button onClick={handleAddNode} className="px-4 py-2 shadow-md bg-gray-500 text-white rounded hover:bg-green-600 button">
+          자식 노드 생성
         </button>
+      </div>
+
+      {/* 오른쪽 위: 공개 범위 설정, 세션 저장 */}
+      <div className="absolute top-4 right-4 flex items-center space-x-2 z-10">
+        {/* 공개 범위 설정 */}
         <select
           value={visibility}
           onChange={(e) => setVisibility(e.target.value)}
-          className="px-2 py-1 border rounded"
+          className="px-4 py-2 border rounded"
         >
           <option value="private">Private</option>
           <option value="friends">Friends</option>
           <option value="public">Public</option>
         </select>
-        <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 button" onClick={handleBrainstorm}>
-          브레인스토밍 요청
+        {/* 세션 저장 */}
+        <button onClick={handleSaveSession} className="px-4 py-2 shadow-md bg-blue-500 text-white rounded hover:bg-blue-600 button">
+          세션 저장
         </button>
-        <input
-          className="px-3 py-2 border rounded w-64"
-          type="text"
-          placeholder="주제를 입력하세요"
-          value={direction}
-          onChange={(e) => setDirection(e.target.value)}
-        />
       </div>
 
-      {/* 
-        수정: minZoom, maxZoom 등을 넓게 설정하여 확대/축소에 제한이 없게 
-      */}
+      {/* React Flow 영역 */}
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -750,18 +760,17 @@ const Home = forwardRef((props: HomeProps, ref) => {
         onNodeDragStart={handleNodeDragStart}
         onNodeDrag={handleNodeDrag}
         onNodeDragStop={handleNodeDragStop}
-        minZoom={0.1} 
-        maxZoom={10} 
+        minZoom={0.1}
+        maxZoom={10}
       />
 
-      {/* 브레인스토밍 결과: 각 줄이 클릭되면 자식 노드 생성 */}
+      {/* 브레인스토밍 결과 */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-1/2 z-10">
         <div className="bg-white p-4 rounded shadow text-sm text-black h-40 overflow-auto">
           {parsedIdeas.map((idea, idx) => (
             <div
               key={idx}
-              onClick={() => handleIdeaClick(idea.replace(/^\d+\.\s*/, ''))} 
-              // "1. A" -> "A" 로
+              onClick={() => handleIdeaClick(idea.replace(/^\d+\.\s*/, ''))} // "1. A" -> "A"
               className="cursor-pointer hover:bg-gray-100 p-1"
             >
               {idea}
