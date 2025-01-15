@@ -15,10 +15,10 @@ function Connections() {
   const [friendName, setFriendName] = useState(""); // 입력된 친구 이름
 
   // ▼ 추가된 state들 ▼
-  const [selectedFriend, setSelectedFriend] = useState<string | null>(null); 
-  const [friendSessions, setFriendSessions] = useState<any[]>([]); 
-  const [showPanel, setShowPanel] = useState(false);    
-  const [loadingSessions, setLoadingSessions] = useState(false); 
+  const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
+  const [friendSessions, setFriendSessions] = useState<any[]>([]);
+  const [showPanel, setShowPanel] = useState(false);
+  const [loadingSessions, setLoadingSessions] = useState(false);
 
   // 친구 목록 가져오기
   const fetchFriends = async () => {
@@ -159,13 +159,12 @@ function Connections() {
       const friendNodes = nodeRes.data.nodes;
 
       // 4) 노드 배열에서 session_id만 새 세션 번호로 교체
-      //    (필요하면 node.id = 0 처럼 초기화 가능)
       const copiedNodes = friendNodes.map((node: any) => ({
         ...node,
-        session_id: newSessionId, 
+        session_id: newSessionId,
       }));
 
-      // 5) 서버로 보낼 JSON 형식 (session_title 제거, 형식 맞춤)
+      // 5) 서버로 보낼 JSON 형식
       const requestBody = {
         session_id: newSessionId,
         user_id: user.id, // 내 user_id
@@ -272,10 +271,7 @@ function Connections() {
                     <div className="space-x-2">
                       <button
                         onClick={() =>
-                          respondToFriendRequest(
-                            request.requester_name,
-                            "accepted"
-                          )
+                          respondToFriendRequest(request.requester_name, "accepted")
                         }
                         className="bg-green-500 text-white px-2 py-1 rounded-lg hover:bg-green-600"
                       >
@@ -283,10 +279,7 @@ function Connections() {
                       </button>
                       <button
                         onClick={() =>
-                          respondToFriendRequest(
-                            request.requester_name,
-                            "rejected"
-                          )
+                          respondToFriendRequest(request.requester_name, "rejected")
                         }
                         className="bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600"
                       >
@@ -349,73 +342,82 @@ function Connections() {
         )}
       </div>
 
-      {/* 오른쪽에서 슬라이드되는 세션 패널 */}
+      {/* 오른쪽에서 슬라이드되는 세션 패널 (스크롤 가능) */}
       <div
         className={`
-          fixed top-0 right-0 w-3/4 sm:w-1/2 md:w-1/3 lg:w-1/4 h-screen bg-white shadow-xl p-6
+          fixed top-0 right-0 w-3/4 sm:w-1/2 md:w-1/3 lg:w-1/4 h-screen bg-white shadow-xl
           transform transition-transform duration-300 z-50
           ${showPanel ? "translate-x-0" : "translate-x-full"}
         `}
       >
-        <button
-          onClick={closePanel}
-          className="mb-4 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-        >
-          닫기
-        </button>
+        {/* 패널 내부를 flex 컨테이너로 잡고, 스크롤할 부분을 따로 분리 */}
+        <div className="p-6 h-full flex flex-col">
+          {/* 닫기 버튼 고정 영역 */}
+          <div className="flex-none mb-4">
+            <button
+              onClick={closePanel}
+              className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+            >
+              닫기
+            </button>
+          </div>
 
-        {loadingSessions ? (
-          <p className="text-gray-600">로딩 중...</p>
-        ) : selectedFriend ? (
-          <>
-            <h2 className="text-lg font-bold mb-4">{selectedFriend}님의 세션</h2>
-            {(() => {
-              const visibleSessions = friendSessions.filter(
-                (s) => s.visibility === "public" || s.visibility === "friends"
-              );
+          {/* 스크롤 가능 영역 */}
+          <div className="flex-1 overflow-y-auto">
+            {loadingSessions ? (
+              <p className="text-gray-600">로딩 중...</p>
+            ) : selectedFriend ? (
+              <>
+                <h2 className="text-lg font-bold mb-4">{selectedFriend}님의 세션</h2>
+                {(() => {
+                  const visibleSessions = friendSessions.filter(
+                    (s) => s.visibility === "public" || s.visibility === "friends"
+                  );
 
-              if (visibleSessions.length === 0) {
-                return (
-                  <p className="text-gray-500">
-                    공개 혹은 친구 공개 세션이 없습니다.
-                  </p>
-                );
-              }
-
-              return (
-                <ul className="space-y-2">
-                  {visibleSessions.map((session) => (
-                    <li
-                      key={session.session_id}
-                      className="bg-gray-100 p-3 rounded shadow"
-                    >
-                      <h3 className="font-semibold">
-                        {session.session_title?.trim() || "NO TITLE"}
-                      </h3>
-                      <p className="text-sm">공개 범위: {session.visibility}</p>
-                      <p className="text-xs text-gray-500">
-                        작성일:{" "}
-                        {new Date(session.created_at).toLocaleDateString()}
+                  if (visibleSessions.length === 0) {
+                    return (
+                      <p className="text-gray-500">
+                        공개 혹은 친구 공개 세션이 없습니다.
                       </p>
+                    );
+                  }
 
-                      {/* ▼ "세션 가져오기" 버튼 ▼ */}
-                      <button
-                        onClick={() => handleCloneSession(session)}
-                        className="mt-2 bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
-                      >
-                        세션 가져오기
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              );
-            })()}
-          </>
-        ) : (
-          <p className="text-gray-600">
-            친구 목록에서 세션을 볼 친구를 선택하세요.
-          </p>
-        )}
+                  return (
+                    <ul className="space-y-2">
+                      {visibleSessions.map((session) => (
+                        <li
+                          key={session.session_id}
+                          className="bg-gray-100 p-3 rounded shadow"
+                        >
+                          <h3 className="font-semibold">
+                            {session.session_title?.trim() || "NO TITLE"}
+                          </h3>
+                          <p className="text-sm">공개 범위: {session.visibility}</p>
+                          <p className="text-xs text-gray-500">
+                            작성일:{" "}
+                            {new Date(session.created_at).toLocaleDateString()}
+                          </p>
+
+                          {/* ▼ "세션 가져오기" 버튼 ▼ */}
+                          <button
+                            onClick={() => handleCloneSession(session)}
+                            className="mt-2 bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
+                          >
+                            세션 가져오기
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  );
+                })()}
+              </>
+            ) : (
+              <p className="text-gray-600">
+                친구 목록에서 세션을 볼 친구를 선택하세요.
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
