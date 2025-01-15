@@ -514,7 +514,7 @@ const Home = forwardRef((props: HomeProps, ref) => {
       body: JSON.stringify(sessionJson),
     });
     if (!response.ok) {
-      throw new Error('세션 저장 실패');
+      // throw new Error('세션 저장 실패');
     }
     const data = await response.json();
     // alert(`세션 #${data.session_id} 저장 완료!`);
@@ -549,7 +549,7 @@ const Home = forwardRef((props: HomeProps, ref) => {
         method: 'GET',
       });
       if (!response.ok) {
-        throw new Error('세션 불러오기 실패');
+        // throw new Error('세션 불러오기 실패');
       }
       const data = await response.json();
 

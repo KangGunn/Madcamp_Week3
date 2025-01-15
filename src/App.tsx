@@ -36,7 +36,7 @@ function App() {
           method: 'GET',
         });
         if (!response.ok) {
-          throw new Error('세션 목록 불러오기 실패');
+          // throw new Error('세션 목록 불러오기 실패');
         }
         const data = await response.json();
         // data.sessions 예: [ { session_id:1, session_title:"...", visibility:"..." }, ...]
@@ -60,7 +60,7 @@ function App() {
         }
       } catch (error: any) {
         console.error(error);
-        alert(`세션 목록 불러오기 오류: ${error.message}`);
+        // alert(`세션 목록 불러오기 오류: ${error.message}`);
       }
     };
     fetchSessions();
