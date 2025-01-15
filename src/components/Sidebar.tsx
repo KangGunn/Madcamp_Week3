@@ -31,7 +31,7 @@ function Sidebar({ sessions, onNewSession, onSelectSession, onDeleteSession, cur
 
   const handleLogout = async () => {
     try {
-      alert("You have been logged out.");
+    //   alert("You have been logged out.");
       logout();
       localStorage.removeItem('sessions');
       localStorage.removeItem('currentSessionId');
@@ -41,7 +41,7 @@ function Sidebar({ sessions, onNewSession, onSelectSession, onDeleteSession, cur
       navigate('/login');
     } catch (error) {
       console.error("Error during logout:", error);
-      alert("An error occurred while logging out.");
+    //   alert("An error occurred while logging out.");
     }
   };
 

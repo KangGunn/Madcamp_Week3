@@ -157,7 +157,7 @@ function EllipseNode(props: NodeProps) {
             >
               삭제
             </li>
-            <li
+            {/* <li
               className="cursor-pointer hover:bg-gray-200 px-2 py-1"
               onClick={() => {
                 setContextMenuVisible(false);
@@ -165,7 +165,7 @@ function EllipseNode(props: NodeProps) {
               }}
             >
               취소
-            </li>
+            </li> */}
           </ul>
         </div>
       )}

@@ -331,11 +331,11 @@ const Home = forwardRef((props: HomeProps, ref) => {
         });
         try {
           await handleSaveSessionWithJson(sessionJson);
-          console.log(`초기 세션 #${sessionId} 자동 저장 완료!`);
+          // console.log(`초기 세션 #${sessionId} 자동 저장 완료!`);
           localStorage.setItem(flagKey, 'true');
         } catch (err: any) {
           console.error(err);
-          alert('초기 세션 저장 오류: ' + err.message);
+          // alert('초기 세션 저장 오류: ' + err.message);
         }
       };
       saveInitialSession();
@@ -517,7 +517,7 @@ const Home = forwardRef((props: HomeProps, ref) => {
       throw new Error('세션 저장 실패');
     }
     const data = await response.json();
-    alert(`세션 #${data.session_id} 저장 완료!`);
+    // alert(`세션 #${data.session_id} 저장 완료!`);
   }, []);
 
   const handleSaveSession = useCallback(async () => {
@@ -537,7 +537,7 @@ const Home = forwardRef((props: HomeProps, ref) => {
       await handleSaveSessionWithJson(sessionJson);
     } catch (err: any) {
       console.error(err);
-      alert(`세션 저장 오류: ${err.message}`);
+      // alert(`세션 저장 오류: ${err.message}`);
     }
   }, [user, sessionId, visibility, nodes]);
 
@@ -588,10 +588,10 @@ const Home = forwardRef((props: HomeProps, ref) => {
       setEdges(restoredEdges);
 
       setSessionId(loadSessionId);
-      alert(`세션 #${loadSessionId} 불러오기 완료!`);
+      // alert(`세션 #${loadSessionId} 불러오기 완료!`);
     } catch (err: any) {
       console.error(err);
-      alert(`세션 불러오기 오류: ${err.message}`);
+      // alert(`세션 불러오기 오류: ${err.message}`);
     }
   }, [user, handleRemoveNode, handleChangeNode]);
 
@@ -636,10 +636,10 @@ const Home = forwardRef((props: HomeProps, ref) => {
     try {
       await handleSaveSessionWithJson(sessionJson);
       setSessionId(newSessionId);
-      alert(`새 세션 #${newSessionId} 저장 완료!`);
+      // alert(`새 세션 #${newSessionId} 저장 완료!`);
     } catch (err: any) {
       console.error(err);
-      alert(`새 세션 저장 오류: ${err.message}`);
+      // alert(`새 세션 저장 오류: ${err.message}`);
     }
   }, [handleRemoveNode, handleChangeNode, user, navigate, visibility]);
 
@@ -653,80 +653,82 @@ const Home = forwardRef((props: HomeProps, ref) => {
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
 
-  return (
-    <div className="w-full h-full bg-gray-100 relative">
-      {/* 상단 왼쪽 */}
-      <div className="absolute top-4 left-4 flex items-center space-x-2 z-10">
-        <input
-          className="px-3 py-2 bg-customGray text-white placeholder-white border rounded w-64"
-          type="text"
-          placeholder="상황을 입력하세요"
-          value={direction}
-          onChange={(e) => setDirection(e.target.value)}
-        />
-        <button
-          className="px-4 py-2 shadow-md bg-blue-500 text-white rounded hover:bg-blue-600"
-          onClick={handleBrainstormClick}
-        >
-          브레인스토밍
-        </button>
-        <button
-          onClick={handleAddNode}
-          className="px-4 py-2 shadow-md bg-customGray text-white rounded hover:bg-green-600"
-        >
-          자식 노드 생성
-        </button>
-      </div>
-
-      {/* 상단 오른쪽 */}
-      <div className="absolute top-4 right-4 flex items-center space-x-2 z-10">
-        <select
-          value={visibility}
-          onChange={(e) => setVisibility(e.target.value)}
-          className="px-4 py-2 bg-customGray border rounded"
-        >
-          <option value="private">나만 보기</option>
-          <option value="friends">친구 공개</option>
-          <option value="public">전체 공개</option>
-        </select>
-        <button
-          onClick={handleSaveSession}
-          className="px-4 py-2 shadow-md bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          저장
-        </button>
-      </div>
-
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={handleNodesChange}
-        // onEdgesChange={onEdgesChange}
-        nodeTypes={nodeTypes}
-        onPaneClick={handlePaneClick}
-        onNodeDragStart={handleNodeDragStart}
-        onNodeDrag={handleNodeDrag}
-        onNodeDragStop={handleNodeDragStop}
-        minZoom={0.1}
-        maxZoom={10}
-      />
-
-      {/* 브레인스토밍 아이디어 목록 */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-1/2 z-10">
-        <div className="bg-white p-4 rounded shadow text-sm text-black h-40 overflow-auto">
-          {parsedIdeas.map((idea, idx) => (
-            <div
-              key={idx}
-              className="cursor-pointer hover:bg-gray-100 p-1"
-              onClick={() => handleIdeaClick(idea.replace(/^\d+\.\s*/, ''))}
-            >
-              {idea}
-            </div>
-          ))}
+    return (
+      <div className="w-full h-full bg-gray-100 relative">
+        {/* 상단 왼쪽 */}
+        <div className="absolute top-4 left-4 flex items-center space-x-2 z-10">
+          <input
+            className="px-3 py-2 bg-customGray text-white placeholder-white border rounded w-64"
+            type="text"
+            placeholder="상황을 입력하세요"
+            value={direction}
+            onChange={(e) => setDirection(e.target.value)}
+          />
+          <button
+            className="px-4 py-2 shadow-md bg-blue-500 text-white rounded hover:bg-blue-600"
+            onClick={handleBrainstormClick}
+          >
+            브레인스토밍
+          </button>
+          <button
+            onClick={handleAddNode}
+            className="px-4 py-2 shadow-md bg-customGray text-white rounded hover:bg-green-600"
+          >
+            자식 노드 생성
+          </button>
         </div>
+    
+        {/* 상단 오른쪽 */}
+        <div className="absolute top-4 right-4 flex flex-col items-end space-y-2 z-10">
+          {/* 버튼 그룹 */}
+          <div className="flex items-center space-x-2">
+            <select
+              value={visibility}
+              onChange={(e) => setVisibility(e.target.value)}
+              className="px-4 py-2 bg-customGray border rounded"
+            >
+              <option value="private">나만 보기</option>
+              <option value="friends">친구 공개</option>
+              <option value="public">전체 공개</option>
+            </select>
+            <button
+              onClick={handleSaveSession}
+              className="px-4 py-2 shadow-md bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              저장
+            </button>
+          </div>
+    
+          {/* 브레인스토밍 아이디어 목록 */}
+          <div className="w-72 mt-2">
+            <div className="bg-transparent p-4 rounded text-sm text-black max-h-100 overflow-auto">
+              {parsedIdeas.map((idea, idx) => (
+                <div
+                  key={idx}
+                  className="cursor-pointer hover:bg-gray-100 p-1"
+                  onClick={() => handleIdeaClick(idea.replace(/^\d+\.\s*/, ''))}
+                >
+                  {idea}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+    
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={handleNodesChange}
+          nodeTypes={nodeTypes}
+          onPaneClick={handlePaneClick}
+          onNodeDragStart={handleNodeDragStart}
+          onNodeDrag={handleNodeDrag}
+          onNodeDragStop={handleNodeDragStop}
+          minZoom={0.1}
+          maxZoom={10}
+        />
       </div>
-    </div>
-  );
+    );    
 });
 
 export default Home;

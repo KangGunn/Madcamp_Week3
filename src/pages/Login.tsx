@@ -23,7 +23,7 @@ function Login() {
       }
 
       const data = await response.json();
-      alert('Registration successful!');
+      alert('회원가입 성공');
     } catch (error) {
       console.error('Registration Error:', error);
       setErrorMessage('Registration failed. Please try again.');
@@ -44,7 +44,7 @@ function Login() {
 
       const data = await response.json();
       setUser(data);
-      alert('Login successful!');
+      // alert('Login successful!');
       navigate('/home'); // 로그인 성공 시 Home 페이지로 이동
     } catch (error) {
       console.error('Login Error:', error);
@@ -55,13 +55,13 @@ function Login() {
   return (
     <div className="w-full h-screen bg-main flex flex-col items-center justify-center">
       {/* Title & Image Container */}
-      <div className="flex items-center space-x-8 mb-12">
+      <div className="flex items-center space-x-8">
         
         {/* 캐릭터 이미지 */}
         <img
           src={characterImage} // 이미지 경로
           alt="Character"
-          style={{ width: '500px', height: '400px' }}
+          style={{ width: '620px', height: '450px' }}
           className="w-200 h-80"
         />
       </div>
@@ -70,14 +70,14 @@ function Login() {
       <div className="flex flex-col items-center space-y-4 mb-8">
         <input
           type="text"
-          placeholder="Username"
+          placeholder="사용자명"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           className="w-64 px-3 py-2 border-b bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-0"
         />
         <input
           type="password"
-          placeholder="Password"
+          placeholder="비밀번호"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="w-64 px-3 py-2 border-b bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-0"
@@ -90,13 +90,13 @@ function Login() {
           onClick={handleRegister}
           className="text-white border border-white px-4 py-2 rounded hover:bg-white hover:text-black"
         >
-          Register
+          회원가입
         </button>
         <button
           onClick={handleLogin}
           className="text-white border border-white px-4 py-2 rounded hover:bg-white hover:text-black"
         >
-          Login
+          로그인
         </button>
       </div>
   

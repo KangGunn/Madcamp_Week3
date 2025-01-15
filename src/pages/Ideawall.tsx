@@ -183,7 +183,7 @@ function Ideawall() {
                   {/* 세션 가져오기 버튼 */}
                   <button
                     onClick={() => handleCloneSession(session)}
-                    className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600"
+                    className="bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600"
                   >
                     세션 가져오기
                   </button>
