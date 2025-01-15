@@ -658,9 +658,9 @@ const Home = forwardRef((props: HomeProps, ref) => {
       {/* 상단 왼쪽 */}
       <div className="absolute top-4 left-4 flex items-center space-x-2 z-10">
         <input
-          className="px-3 py-2 border rounded w-64"
+          className="px-3 py-2 bg-customGray text-white placeholder-white border rounded w-64"
           type="text"
-          placeholder="주제를 입력하세요"
+          placeholder="상황을 입력하세요"
           value={direction}
           onChange={(e) => setDirection(e.target.value)}
         />
@@ -672,7 +672,7 @@ const Home = forwardRef((props: HomeProps, ref) => {
         </button>
         <button
           onClick={handleAddNode}
-          className="px-4 py-2 shadow-md bg-gray-500 text-white rounded hover:bg-green-600"
+          className="px-4 py-2 shadow-md bg-customGray text-white rounded hover:bg-green-600"
         >
           자식 노드 생성
         </button>
@@ -683,17 +683,17 @@ const Home = forwardRef((props: HomeProps, ref) => {
         <select
           value={visibility}
           onChange={(e) => setVisibility(e.target.value)}
-          className="px-4 py-2 border rounded"
+          className="px-4 py-2 bg-customGray border rounded"
         >
-          <option value="private">Private</option>
-          <option value="friends">Friends</option>
-          <option value="public">Public</option>
+          <option value="private">나만 보기</option>
+          <option value="friends">친구 공개</option>
+          <option value="public">전체 공개</option>
         </select>
         <button
           onClick={handleSaveSession}
           className="px-4 py-2 shadow-md bg-blue-500 text-white rounded hover:bg-blue-600"
         >
-          세션 저장
+          저장
         </button>
       </div>
 

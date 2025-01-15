@@ -42,12 +42,12 @@ function App() {
         // data.sessions 예: [ { session_id:1, session_title:"...", visibility:"..." }, ...]
         const loadedSessions = data.sessions.map((s: any) => ({
           id: Number(s.session_id),
-          title: s.session_title?.trim() ? s.session_title : `Session #${s.session_id}`,
+          title: s.session_title?.trim() ? s.session_title : `마인드맵 #${s.session_id}`,
         }));
 
         if (loadedSessions.length === 0) {
-          // 서버에 세션이 하나도 없는 신규 유저 -> Session #1 생성
-          const defaultSession = { id: 1, title: 'Session #1' };
+          // 서버에 세션이 하나도 없는 신규 유저 -> 마인드맵 #1 생성
+          const defaultSession = { id: 1, title: '마인드맵 #1' };
           setSessions([defaultSession]);
           setCurrentSessionId(1);
           localStorage.setItem('sessions', JSON.stringify([defaultSession]));
@@ -86,7 +86,7 @@ function App() {
       ? 1
       : Math.max(...sessions.map(s => s.id)) + 1;
 
-    const newSession = { id: newId, title: `Session #${newId}` };
+    const newSession = { id: newId, title: `마인드맵 #${newId}` };
     setSessions(prev => [...prev, newSession]);
     setCurrentSessionId(newId);
 
