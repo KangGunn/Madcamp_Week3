@@ -18,6 +18,7 @@ import EllipseNode from '../components/EllipseNode';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from 'react-router-dom';
+import armImage from '../assets/images/arm.png';
 
 // ----- 노드 타입 등록 -----
 const nodeTypes = {
@@ -726,6 +727,13 @@ const Home = forwardRef((props: HomeProps, ref) => {
           onNodeDragStop={handleNodeDragStop}
           minZoom={0.1}
           maxZoom={10}
+        />
+        {/* 캐릭터 이미지 */}
+        <img
+          src={armImage} // 이미지 경로
+          alt="Arm"
+          style={{ width: '350px', height: '650px' }}
+          className="absolute bottom-10 right-0 w-20 h-auto z-10"
         />
       </div>
     );    
