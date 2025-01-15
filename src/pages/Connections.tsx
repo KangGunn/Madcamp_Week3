@@ -174,7 +174,7 @@ function Connections() {
       {showAddFriendModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-lg p-6 w-96">
-            <h2 className="text-lg font-bold mb-4">친구 추가</h2>
+            <h2 className="text-lg text-black font-bold mb-4">친구 추가</h2>
             <input
               type="text"
               placeholder="친구 이름 입력"
